@@ -1,0 +1,48 @@
+package:
+  name: i2pd
+  version: 2.59.0
+  epoch: 0
+  description: I2P daemon
+  copyright:
+    - license: BSD-3-Clause
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - busybox
+      - build-base
+      - boost-dev
+      - git
+      - miniupnpc-dev
+      - openssl-dev
+      - zlib-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/PurpleI2P/i2pd.git
+      tag: ${{package.version}}
+
+  - runs: |
+      make USE_UPNP=yes -j$(nproc)
+
+      strip i2pd
+
+      install -Dm755 i2pd "${{targets.destdir}}/usr/bin/i2pd"
+
+      install -dm755 "${{targets.destdir}}/usr/share/i2pd"
+      install -dm700 -o 65532 -g 65532 "${{targets.destdir}}/var/lib/i2pd"
+      install -dm755 -o 65532 -g 65532 "${{targets.destdir}}/var/log/i2pd"
+
+      install -Dm644 contrib/tunnels.conf "${{targets.destdir}}/etc/i2pd/tunnels.conf"
+      install -Dm644 contrib/docker/i2pd-docker.conf "${{targets.destdir}}/etc/i2pd/i2pd.conf"
+      cp -r contrib/certificates "${{targets.destdir}}/usr/share/i2pd/certificates"
+      ln -s /usr/share/i2pd/certificates "${{targets.destdir}}/var/lib/i2pd/certificates"
+
+      # Patch config for container use
+      sed -i 's/^log = file/log = stdout/' "${{targets.destdir}}/etc/i2pd/i2pd.conf"
+      sed -i 's/^loglevel = none/loglevel = error/' "${{targets.destdir}}/etc/i2pd/i2pd.conf"
