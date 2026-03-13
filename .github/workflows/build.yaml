@@ -277,23 +277,21 @@ jobs:
 
       - name: Build image with apko
         run: |
-          # If we have downloaded custom local packages, append them to the apko build. 
-          # Those that don't need them (e.g. openssl) simply won't use them, but the flag is harmless.
-          if [ -d "./packages" ]; then
-            apko build "${{ matrix.name }}/apko.yaml" \
-              "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ github.sha }}" \
-              "${{ matrix.name }}.tar" \
-              --arch x86_64 \
-              --repository-append ./packages \
-              --keyring-append ./melange.rsa.pub \
-              --sbom=true
-          else
-            apko build "${{ matrix.name }}/apko.yaml" \
-              "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ github.sha }}" \
-              "${{ matrix.name }}.tar" \
-              --arch x86_64 \
-              --sbom=true
+          # Always append keyring if it exists to verify local packages
+          ARGS="--sbom=true"
+          if [ -f "melange.rsa.pub" ]; then
+            ARGS="$ARGS --keyring-append ./melange.rsa.pub"
           fi
+          if [ -d "./packages" ]; then
+            ARGS="$ARGS --repository-append ./packages"
+          fi
+
+          apko build "${{ matrix.name }}/apko.yaml" \
+            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ github.sha }}" \
+            "${{ matrix.name }}.tar" \
+            --arch x86_64 \
+            $ARGS
+
           docker load < "${{ matrix.name }}.tar"
 
       - name: Scan with Grype
@@ -382,19 +380,19 @@ jobs:
       - name: Publish image
         if: github.event_name != 'pull_request'
         run: |
-          if [ -d "./packages" ]; then
-            apko publish "${{ matrix.name }}/apko.yaml" \
-              "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}" \
-              "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:latest" \
-              --arch x86_64,aarch64 \
-              --repository-append ./packages \
-              --keyring-append ./melange.rsa.pub
-          else
-            apko publish "${{ matrix.name }}/apko.yaml" \
-              "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}" \
-              "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:latest" \
-              --arch x86_64,aarch64
+          ARGS="--sbom=true"
+          if [ -f "melange.rsa.pub" ]; then
+            ARGS="$ARGS --keyring-append ./melange.rsa.pub"
           fi
+          if [ -d "./packages" ]; then
+            ARGS="$ARGS --repository-append ./packages"
+          fi
+
+          apko publish "${{ matrix.name }}/apko.yaml" \
+            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}" \
+            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:latest" \
+            --arch x86_64,aarch64 \
+            $ARGS
 
       - name: Sign image with cosign
         if: github.event_name != 'pull_request'
