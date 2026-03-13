@@ -38,8 +38,7 @@ jobs:
     outputs:
       base_packages: ${{ steps.set.outputs.base_packages }}
       app_packages: ${{ steps.set.outputs.app_packages }}
-      apko_only: ${{ steps.set.outputs.apko_only }}
-      melange_images: ${{ steps.set.outputs.melange_images }}
+      apko_images: ${{ steps.set.outputs.apko_images }}
     steps:
       - uses: actions/checkout@v4
 
@@ -286,12 +285,14 @@ jobs:
               "${{ matrix.name }}.tar" \
               --arch x86_64 \
               --repository-append ./packages \
-              --keyring-append ./melange.rsa.pub
+              --keyring-append ./melange.rsa.pub \
+              --sbom=true
           else
             apko build "${{ matrix.name }}/apko.yaml" \
               "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ github.sha }}" \
               "${{ matrix.name }}.tar" \
-              --arch x86_64
+              --arch x86_64 \
+              --sbom=true
           fi
           docker load < "${{ matrix.name }}.tar"
 
@@ -353,10 +354,26 @@ jobs:
             PRIMARY_PKG="${{ matrix.name }}"
           fi
 
-          VERSION=$(jq -r --arg pkg "$PRIMARY_PKG" '.packages[] | select(.name == $pkg) | .versionInfo' sbom-x86_64.spdx.json | head -1)
+          SBOM_FILE="sbom-x86_64.spdx.json"
+          if [ ! -f "$SBOM_FILE" ]; then
+             # Fallback: find any SBOM if the default name doesn't match
+             SBOM_FILE=$(find . -name "sbom-*.spdx.json" | head -1)
+          fi
+
+          if [ -z "$SBOM_FILE" ] || [ ! -f "$SBOM_FILE" ]; then
+            echo "::error::SBOM file not found for ${{ matrix.name }}"
+            exit 1
+          fi
+
+          VERSION=$(jq -r --arg pkg "$PRIMARY_PKG" '.packages[] | select(.name == $pkg) | .versionInfo' "$SBOM_FILE" | head -1)
 
           if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-            echo "::error::Failed to extract version for $PRIMARY_PKG from SBOM for ${{ matrix.name }}"
+            # Second fallback: just get the version of the first package in the list that isn't baselayout
+            VERSION=$(jq -r '.packages[] | select(.name != "wolfi-baselayout") | .versionInfo' "$SBOM_FILE" | head -1)
+          fi
+
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error::Failed to extract version for $PRIMARY_PKG from SBOM $SBOM_FILE"
             exit 1
           fi
           echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
