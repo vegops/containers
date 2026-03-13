@@ -27,6 +27,7 @@ env:
   APKO_VERSION: v1.1.14
   MELANGE_SIGNING_KEY: ${{ secrets.MELANGE_SIGNING_KEY }}
   MELANGE_SIGNING_KEY_PUB: ${{ secrets.MELANGE_SIGNING_KEY_PUB }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   ##############################################################################
