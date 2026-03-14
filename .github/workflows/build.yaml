@@ -14,7 +14,12 @@ on:
     - cron: "0 2 * * *"
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  id-token: write
+  actions: read
 
 concurrency:
   group: build-${{ github.ref }}
@@ -236,21 +241,16 @@ jobs:
   ##############################################################################
   # FINAL TIER: BUILD ALL IMAGES (depends on all melange packages)             #
   ##############################################################################
-  build-images:
+  verify-images:
     needs: [discover, melange-build-base, melange-build-app]
     if: always() && needs.discover.outputs.apko_images != '[]' && needs.discover.outputs.apko_images != '[""]' && (needs.melange-build-base.result == 'success' || needs.melange-build-base.result == 'skipped') && (needs.melange-build-app.result == 'success' || needs.melange-build-app.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 50
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-      id-token: write
-
     strategy:
       fail-fast: false
       matrix:
         name: ${{ fromJson(needs.discover.outputs.apko_images) }}
+        arch: [x86_64, aarch64]
 
     steps:
       - uses: actions/checkout@v4
@@ -273,7 +273,7 @@ jobs:
       - name: Download all packages
         uses: actions/download-artifact@v4
         with:
-          pattern: packages-*-*
+          pattern: packages-*-${{ matrix.arch }}
           merge-multiple: true
           path: .
 
@@ -298,94 +298,60 @@ jobs:
       - name: Re-index local packages
         run: |
           if [ -f "melange.rsa" ]; then
-            for arch in x86_64 aarch64; do
-              if [ -d "packages/$arch" ]; then
-                melange index --signing-key melange.rsa -o "packages/$arch/APKINDEX.tar.gz" "packages/$arch"/*.apk
-              fi
-            done
-          fi
-
-      - name: Build image with apko
-        run: |
-          ARGS=""
-          if [ -f "melange.rsa.pub" ]; then
-            ARGS="$ARGS --keyring-append ./melange.rsa.pub"
-          fi
-          if [ -d "./packages" ]; then
-            ARGS="$ARGS --repository-append ./packages"
+            if [ -d "packages/${{ matrix.arch }}" ]; then
+              melange index --signing-key melange.rsa -o "packages/${{ matrix.arch }}/APKINDEX.tar.gz" "packages/${{ matrix.arch }}"/*.apk
+            fi
           fi
 
           apko build "${{ matrix.name }}/apko.yaml" \
-            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ github.sha }}" \
-            "${{ matrix.name }}.tar" \
-            --arch x86_64 \
+            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:verify-${{ matrix.arch }}" \
+            "${{ matrix.name }}-${{ matrix.arch }}.tar" \
+            --arch "${{ matrix.arch }}" \
             $ARGS
-
-          docker load < "${{ matrix.name }}.tar"
-
-          TARGET_IMAGE="${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ github.sha }}"
-          LOADED_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep "^${TARGET_IMAGE}-amd64$" | head -1 || true)
-          if [ -z "$LOADED_IMAGE" ]; then
-            LOADED_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}" | head -1 || true)
-          fi
-
-          if [ -z "$LOADED_IMAGE" ]; then
-            echo "::error::Could not find loaded image for ${{ matrix.name }} after docker load"
-            docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}' | head -30
-            exit 1
-          fi
-
-          if [ "$LOADED_IMAGE" != "$TARGET_IMAGE" ]; then
-            docker tag "$LOADED_IMAGE" "$TARGET_IMAGE"
-          fi
 
       - name: Scan with Grype
         id: grype
         uses: anchore/scan-action@v6
         with:
-          image: "docker-archive:./${{ matrix.name }}.tar"
-          output-format: sarif
+          image: "docker-archive:./${{ matrix.name }}-${{ matrix.arch }}.tar"
+          output-format: sarif,json
           fail-build: false
+
+      - name: Rename Grype JSON report
+        run: |
+          mv results.json "cve-report-${{ matrix.name }}-${{ matrix.arch }}.json"
 
       - name: Upload Grype SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
-          category: grype-${{ matrix.name }}
+          category: grype-${{ matrix.name }}-${{ matrix.arch }}
 
       - name: Scan with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          input: ./${{ matrix.name }}.tar
+          input: "./${{ matrix.name }}-${{ matrix.arch }}.tar"
           format: sarif
-          output: trivy-results-${{ matrix.name }}.sarif
+          output: "trivy-results-${{ matrix.name }}-${{ matrix.arch }}.sarif"
 
       - name: Upload Trivy SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: trivy-results-${{ matrix.name }}.sarif
-          category: trivy-${{ matrix.name }}
-
-      - name: Generate CVE report
-        shell: bash
-        env:
-          REGISTRY: ${{ env.REGISTRY_NAMESPACE }}
-          IMAGE_NAME: ${{ matrix.name }}
-          VERSION: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          docker run --rm \
-            -v "${PWD}":/work -w /work \
-            anchore/grype:latest \
-            "docker-archive:/work/${IMAGE_NAME}.tar" \
-            -o json > "cve-report-${IMAGE_NAME}.json"
+          sarif_file: "trivy-results-${{ matrix.name }}-${{ matrix.arch }}.sarif"
+          category: "trivy-${{ matrix.name }}-${{ matrix.arch }}"
 
       - name: Upload CVE report artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cve-report-${{ matrix.name }}
-          path: cve-report-${{ matrix.name }}.json
+          name: cve-report-${{ matrix.name }}-${{ matrix.arch }}
+          path: "cve-report-${{ matrix.name }}-${{ matrix.arch }}.json"
           retention-days: 90
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.name }}-${{ matrix.arch }}
+          path: sbom-*.spdx.json
 
       - name: Extract version
         id: version
@@ -396,22 +362,77 @@ jobs:
             PKG_EPOCH=$(awk '/^  epoch:/ {print $2}' "${{ matrix.name }}/melange.yaml")
             echo "tag=${PKG_VERSION}-r${PKG_EPOCH}" >> "$GITHUB_OUTPUT"
           else
-            SBOM_FILE=$(find . -name "sbom-*.spdx.json" | head -1)
-            if [ -z "$SBOM_FILE" ]; then
-              echo "::error::No SBOM found and no melange.yaml for ${{ matrix.name }}"
-              exit 1
-            fi
-            PRIMARY_PKG=$(awk '/^  packages:/{f=1;next} /^  [a-zA-Z]/{f=0} f' "${{ matrix.name }}/apko.yaml" | sed -nE 's/.*- ([a-zA-Z0-9_-]+).*/\1/p' | grep -v 'wolfi-baselayout' | grep -v 'ca-certificates' | head -1)
-            VERSION=$(jq -r --arg pkg "${PRIMARY_PKG:-${{ matrix.name }}}" '.packages[] | select(.name == $pkg) | .versionInfo' "$SBOM_FILE" | head -1)
-            if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-              VERSION=$(jq -r '.packages[] | select(.name != "wolfi-baselayout") | .versionInfo' "$SBOM_FILE" | head -1)
-            fi
-            echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
-            rm -f sbom-*.spdx.json
+            # Default fallback for apko-only images
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish image
-        if: github.event_name != 'pull_request'
+  ##############################################################################
+  # PUBLISH AND SIGN IMAGES (matrix name)                                     #
+  ##############################################################################
+  publish:
+    needs: [discover, verify-images]
+    if: always() && github.event_name != 'pull_request' && needs.verify-images.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJson(needs.discover.outputs.apko_images) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install apko
+        run: |
+          go install chainguard.dev/apko@${{ env.APKO_VERSION }}
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - uses: sigstore/cosign-installer@v4.1.0
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_HOST }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*-*
+          merge-multiple: true
+          path: .
+
+      - name: Install melange
+        run: |
+          go install chainguard.dev/melange@${{ env.MELANGE_VERSION }}
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Setup signing key
+        run: |
+          if [ ! -f "melange.rsa.pub" ]; then
+            echo "${{ env.MELANGE_SIGNING_KEY_PUB }}" > melange.rsa.pub
+          fi
+          if [ ! -f "melange.rsa" ]; then
+            echo "${{ env.MELANGE_SIGNING_KEY }}" > melange.rsa
+            chmod 600 melange.rsa
+          fi
+
+      - name: Extract version
+        id: version
+        run: |
+          set -euo pipefail
+          if [ -f "${{ matrix.name }}/melange.yaml" ]; then
+            PKG_VERSION=$(awk '/^  version:/ {print $2}' "${{ matrix.name }}/melange.yaml")
+            PKG_EPOCH=$(awk '/^  epoch:/ {print $2}' "${{ matrix.name }}/melange.yaml")
+            echo "tag=${PKG_VERSION}-r${PKG_EPOCH}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish multi-arch image
         run: |
           ARGS=""
           if [ -f "melange.rsa.pub" ]; then
@@ -428,31 +449,31 @@ jobs:
             $ARGS
 
       - name: Sign image with cosign
-        if: github.event_name != 'pull_request'
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            cosign sign --yes \
-              "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}"
+        run: |
+          cosign sign \
+            --yes \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/build.yaml@refs/heads/main" \
+            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}"
 
   ##############################################################################
   # SUMMARY                                                                    #
   ##############################################################################
   summary:
-    needs: [build-images]
+    needs: [verify-images, publish]
     runs-on: ubuntu-latest
     if: always()
     permissions: {}
     steps:
       - name: Check results
         run: |
-          IMAGES="${{ needs.build-images.result }}"
-          echo "build-images: $IMAGES"
+          VERIFY="${{ needs.verify-images.result }}"
+          PUBLISH="${{ needs.publish.result }}"
+          echo "verify-images: $VERIFY"
+          echo "publish: $PUBLISH"
 
-          if [[ "$IMAGES" != "success" && "$IMAGES" != "skipped" ]]; then
-            echo "::error::Image builds did not succeed (build-images=$IMAGES)"
+          if [[ "$VERIFY" != "success" && "$VERIFY" != "skipped" ]]; then
+            echo "::error::Image verification did not succeed"
             exit 1
           fi
 
@@ -460,7 +481,7 @@ jobs:
   # CLEANUP OLD VERSIONS                                                       #
   ##############################################################################
   cleanup:
-    needs: [build-images]
+    needs: [publish]
     runs-on: ubuntu-latest
     if: always() && github.event_name != 'pull_request'
     permissions:
