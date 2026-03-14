@@ -208,8 +208,9 @@ jobs:
 
       - name: Re-index local packages
         run: |
+          chmod 600 melange.rsa
           if [ -d "packages/${{ matrix.arch }}" ]; then
-            melange index -o "packages/${{ matrix.arch }}/APKINDEX.tar.gz" "packages/${{ matrix.arch }}"/*.apk
+            melange index --signing-key melange.rsa -o "packages/${{ matrix.arch }}/APKINDEX.tar.gz" "packages/${{ matrix.arch }}"/*.apk
           fi
 
       - name: Build package with melange
@@ -281,23 +282,32 @@ jobs:
           go install chainguard.dev/melange@${{ env.MELANGE_VERSION }}
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
+      - name: Setup signing key
+        run: |
+          # The pub key should already exist from artifacts.
+          # For protected branches, also create it from secrets if missing.
+          if [ ! -f "melange.rsa.pub" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "${{ env.MELANGE_SIGNING_KEY_PUB }}" > melange.rsa.pub
+          fi
+          # Private key needed for re-indexing
+          if [ ! -f "melange.rsa" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "${{ env.MELANGE_SIGNING_KEY }}" > melange.rsa
+            chmod 600 melange.rsa
+          fi
+
       - name: Re-index local packages
         run: |
-          for arch in x86_64 aarch64; do
-            if [ -d "packages/$arch" ]; then
-              melange index -o "packages/$arch/APKINDEX.tar.gz" "packages/$arch"/*.apk
-            fi
-          done
-
-      - name: Setup signing key (protected branch)
-        if: github.event_name != 'pull_request'
-        run: |
-          echo "${{ env.MELANGE_SIGNING_KEY_PUB }}" > melange.rsa.pub
+          if [ -f "melange.rsa" ]; then
+            for arch in x86_64 aarch64; do
+              if [ -d "packages/$arch" ]; then
+                melange index --signing-key melange.rsa -o "packages/$arch/APKINDEX.tar.gz" "packages/$arch"/*.apk
+              fi
+            done
+          fi
 
       - name: Build image with apko
         run: |
-          # Always append keyring if it exists to verify local packages
-          ARGS="--sbom=true"
+          ARGS=""
           if [ -f "melange.rsa.pub" ]; then
             ARGS="$ARGS --keyring-append ./melange.rsa.pub"
           fi
@@ -361,45 +371,33 @@ jobs:
           path: cve-report-${{ matrix.name }}.json
           retention-days: 90
 
-      - name: Extract dynamic version from SBOM
+      - name: Extract version
         id: version
         run: |
           set -euo pipefail
-          PRIMARY_PKG=$(awk '/^  packages:/{flag=1; next} /^  [a-zA-Z]/{flag=0} flag {print}' "${{ matrix.name }}/apko.yaml" | grep -E '^[[:space:]]+-[[:space:]]+[a-zA-Z0-9_-]+' | sed -nE 's/.*- ([a-zA-Z0-9_-]+)(@.*)?.*/\1/p' | grep -v 'wolfi-baselayout' | grep -v 'ca-certificates' | head -1)
-
-          if [ -z "$PRIMARY_PKG" ]; then
-            PRIMARY_PKG="${{ matrix.name }}"
+          if [ -f "${{ matrix.name }}/melange.yaml" ]; then
+            PKG_VERSION=$(awk '/^  version:/ {print $2}' "${{ matrix.name }}/melange.yaml")
+            PKG_EPOCH=$(awk '/^  epoch:/ {print $2}' "${{ matrix.name }}/melange.yaml")
+            echo "tag=${PKG_VERSION}-r${PKG_EPOCH}" >> "$GITHUB_OUTPUT"
+          else
+            SBOM_FILE=$(find . -name "sbom-*.spdx.json" | head -1)
+            if [ -z "$SBOM_FILE" ]; then
+              echo "::error::No SBOM found and no melange.yaml for ${{ matrix.name }}"
+              exit 1
+            fi
+            PRIMARY_PKG=$(awk '/^  packages:/{f=1;next} /^  [a-zA-Z]/{f=0} f' "${{ matrix.name }}/apko.yaml" | sed -nE 's/.*- ([a-zA-Z0-9_-]+).*/\1/p' | grep -v 'wolfi-baselayout' | grep -v 'ca-certificates' | head -1)
+            VERSION=$(jq -r --arg pkg "${PRIMARY_PKG:-${{ matrix.name }}}" '.packages[] | select(.name == $pkg) | .versionInfo' "$SBOM_FILE" | head -1)
+            if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+              VERSION=$(jq -r '.packages[] | select(.name != "wolfi-baselayout") | .versionInfo' "$SBOM_FILE" | head -1)
+            fi
+            echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
+            rm -f sbom-*.spdx.json
           fi
-
-          SBOM_FILE="sbom-x86_64.spdx.json"
-          if [ ! -f "$SBOM_FILE" ]; then
-             # Fallback: find any SBOM if the default name doesn't match
-             SBOM_FILE=$(find . -name "sbom-*.spdx.json" | head -1)
-          fi
-
-          if [ -z "$SBOM_FILE" ] || [ ! -f "$SBOM_FILE" ]; then
-            echo "::error::SBOM file not found for ${{ matrix.name }}"
-            exit 1
-          fi
-
-          VERSION=$(jq -r --arg pkg "$PRIMARY_PKG" '.packages[] | select(.name == $pkg) | .versionInfo' "$SBOM_FILE" | head -1)
-
-          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-            # Second fallback: just get the version of the first package in the list that isn't baselayout
-            VERSION=$(jq -r '.packages[] | select(.name != "wolfi-baselayout") | .versionInfo' "$SBOM_FILE" | head -1)
-          fi
-
-          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-            echo "::error::Failed to extract version for $PRIMARY_PKG from SBOM $SBOM_FILE"
-            exit 1
-          fi
-          echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
-          rm -f sbom-*.spdx.json
 
       - name: Publish image
         if: github.event_name != 'pull_request'
         run: |
-          ARGS="--sbom=true"
+          ARGS=""
           if [ -f "melange.rsa.pub" ]; then
             ARGS="$ARGS --keyring-append ./melange.rsa.pub"
           fi
