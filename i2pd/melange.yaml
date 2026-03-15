@@ -35,8 +35,8 @@ pipeline:
       mkdir -p "${{targets.destdir}}/usr/bin"
       cp i2pd "${{targets.destdir}}/usr/bin/i2pd"
 
-      mkdir -p "${{targets.destdir}}/usr/share/i2pd"
-      cp -r contrib/certificates "${{targets.destdir}}/usr/share/i2pd/certificates"
+      mkdir -p "${{targets.destdir}}/var/lib/i2pd"
+      cp -r contrib/certificates "${{targets.destdir}}/var/lib/i2pd/certificates"
 
       mkdir -p "${{targets.destdir}}/etc/i2pd"
       cp contrib/tunnels.conf "${{targets.destdir}}/etc/i2pd/tunnels.conf"
