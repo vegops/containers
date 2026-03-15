@@ -479,8 +479,6 @@ jobs:
         run: |
           cosign sign \
             --yes \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/build.yaml@refs/heads/main" \
             "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}"
 
   ##############################################################################
