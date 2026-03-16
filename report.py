@@ -514,7 +514,7 @@ with open("site/index.html", "w") as f:
     f.write(page)
 
 # Copy favicon
-if os.path.exists("Grass_Block_JE1.png"):
-    shutil.copy("Grass_Block_JE1.png", "site/favicon.png")
+if os.path.exists("logo.png"):
+    shutil.copy("logo.png", "site/favicon.png")
 
 print(f"Generated dashboard with {len(apps)} apps")
