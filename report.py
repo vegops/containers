@@ -1,4 +1,4 @@
-import json, glob, html, datetime, os
+import json, glob, html, datetime, os, shutil
 
 reports = sorted(glob.glob("reports/**/cve-report-*-*.json", recursive=True))
 
@@ -60,6 +60,7 @@ page = f"""<!DOCTYPE html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VegOps CVE Dashboard</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {{
@@ -511,5 +512,9 @@ page += "</div></body></html>"
 
 with open("site/index.html", "w") as f:
     f.write(page)
+
+# Copy favicon
+if os.path.exists("Grass_Block_JE1.png"):
+    shutil.copy("Grass_Block_JE1.png", "site/favicon.png")
 
 print(f"Generated dashboard with {len(apps)} apps")
