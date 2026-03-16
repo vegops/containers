@@ -1,0 +1,57 @@
+package:
+  name: fulcrum
+  version: 2.1.0
+  epoch: 0
+  description: Fulcrum SPV server
+  copyright:
+    - license: GPL-3.0
+
+update:
+  enabled: true
+  github:
+    identifier: cculianu/Fulcrum
+    use-tag: true
+    tag-filter-prefix: v2.1.
+    strip-prefix: v
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - busybox
+      - build-base
+      - jemalloc-dev
+      - lz4-dev
+      - openssl-dev
+      - pkgconf
+      - qt-minimal
+      - rocksdb
+      - snappy-dev
+      - zeromq-dev
+      - zlib-dev
+      - zstd-dev
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/cculianu/Fulcrum.git
+      tag: v${{package.version}}
+
+  - runs: |
+      /usr/bin/qmake -makefile \
+        PREFIX=/usr \
+        Fulcrum.pro \
+        "CONFIG-=debug" \
+        "CONFIG+=release" \
+        "LIBS+=-L/usr/lib -lrocksdb -lz -ljemalloc -lzmq -lzstd -llz4 -lsnappy" \
+        "INCLUDEPATH+=/usr/include"
+
+      make -j "$(nproc)"
+
+      strip Fulcrum
+      mkdir -p "${{targets.destdir}}/usr/bin"
+      cp Fulcrum "${{targets.destdir}}/usr/bin/Fulcrum"
+      cp FulcrumAdmin "${{targets.destdir}}/usr/bin/FulcrumAdmin"
