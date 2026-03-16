@@ -7,7 +7,6 @@ on:
       - "*/apko.yaml"
       - "*/melange.yaml"
       - ".github/workflows/build.yaml"
-      - ".github/workflows/cve-report.yaml"
   pull_request:
     branches: [main]
   schedule:
