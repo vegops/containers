@@ -25,7 +25,16 @@ accounts:
 entrypoint:
   command: /usr/bin/i2pd
 
-cmd: "--service --certsdir=/usr/share/i2pd/certificates --conf=/etc/i2pd/i2pd.conf --tunconf=/etc/i2pd/tunnels.conf --sam.enabled=true --sam.address=0.0.0.0 --sam.port=7656 --upnp.enabled=false"
+cmd: >-
+  --service
+  --datadir=/var/lib/i2pd
+  --certsdir=/usr/share/i2pd/certificates
+  --conf=/etc/i2pd/i2pd.conf
+  --tunconf=/etc/i2pd/tunnels.conf
+  --sam.enabled=true
+  --sam.address=0.0.0.0
+  --sam.port=7656
+  --upnp.enabled=false
 
 paths:
   - path: /var/lib/i2pd
