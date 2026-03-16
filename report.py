@@ -94,9 +94,13 @@ page = f"""<!DOCTYPE html>
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg); 
       color: var(--text); 
-      padding: 2rem; 
+      padding: 1rem; 
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+    }}
+    
+    @media (min-width: 768px) {{
+      body {{ padding: 2rem; }}
     }}
     
     .container {{
@@ -105,35 +109,43 @@ page = f"""<!DOCTYPE html>
     }}
     
     header {{
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
       border-bottom: 1px solid var(--border);
       padding-bottom: 1.5rem;
     }}
     
     h1 {{ 
       color: var(--text); 
-      font-size: 2.25rem;
+      font-size: 1.75rem;
       font-weight: 700;
       letter-spacing: -0.025em;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.5rem;
       display: flex;
       align-items: center;
       gap: 0.75rem;
     }}
     
+    @media (min-width: 768px) {{
+      h1 {{ font-size: 2.25rem; margin-bottom: 0.25rem; }}
+    }}
+    
     h1::before {{
       content: '';
       display: inline-block;
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       background: var(--accent);
-      border-radius: 6px;
+      border-radius: 5px;
       box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+    }}
+    
+    @media (min-width: 768px) {{
+      h1::before {{ width: 24px; height: 24px; border-radius: 6px; }}
     }}
     
     .timestamp {{ 
       color: var(--text-muted); 
-      font-size: 0.95rem; 
+      font-size: 0.875rem; 
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -141,17 +153,25 @@ page = f"""<!DOCTYPE html>
     
     .summary {{ 
       display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-      gap: 1.25rem; 
-      margin-bottom: 3rem; 
+      grid-template-columns: 1fr; 
+      gap: 1rem; 
+      margin-bottom: 2.5rem; 
+    }}
+    
+    @media (min-width: 480px) {{
+      .summary {{ grid-template-columns: repeat(2, 1fr); }}
+    }}
+    
+    @media (min-width: 1024px) {{
+      .summary {{ grid-template-columns: repeat(5, 1fr); }}
     }}
     
     .card {{ 
       background: var(--surface); 
       border: 1px solid var(--border); 
       border-radius: 12px;
-      padding: 1.5rem; 
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      padding: 1.25rem; 
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       display: flex;
       flex-direction: column;
@@ -160,21 +180,21 @@ page = f"""<!DOCTYPE html>
     
     .card:hover {{
       transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
       border-color: var(--surface-hover);
     }}
     
     .card h3 {{ 
       color: var(--text-muted); 
-      font-size: 0.875rem;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 0.75rem; 
+      margin-bottom: 0.5rem; 
     }}
     
     .card .count {{ 
-      font-size: 2.5rem; 
+      font-size: 2rem; 
       font-weight: 700; 
       line-height: 1;
     }}
@@ -186,7 +206,7 @@ page = f"""<!DOCTYPE html>
     .count.low {{ color: var(--low); }}
     
     .image-section {{ 
-      margin-bottom: 2.5rem; 
+      margin-bottom: 2rem; 
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -195,18 +215,19 @@ page = f"""<!DOCTYPE html>
     }}
     
     .image-header {{
-      padding: 1.25rem 1.5rem;
+      padding: 1rem 1.25rem;
       background: rgba(15, 23, 42, 0.4);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: relative;
+      flex-wrap: wrap;
+      gap: 0.75rem;
     }}
     
     .image-section h2 {{ 
       color: var(--text); 
-      font-size: 1.25rem;
+      font-size: 1.125rem;
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -215,7 +236,7 @@ page = f"""<!DOCTYPE html>
     
     .image-section h2::before {{
       content: '📦';
-      font-size: 1.1rem;
+      font-size: 1rem;
     }}
     
     .table-wrapper {{
@@ -229,7 +250,7 @@ page = f"""<!DOCTYPE html>
     }}
     
     th, td {{ 
-      padding: 1rem 1.5rem; 
+      padding: 1rem 1.25rem; 
       border-bottom: 1px solid var(--border); 
     }}
     
@@ -252,6 +273,62 @@ page = f"""<!DOCTYPE html>
     
     tbody tr:hover {{
       background-color: rgba(255, 255, 255, 0.02);
+    }}
+    
+    /* Responsive Table to Cards */
+    @media (max-width: 767px) {{
+      thead {{ display: none; }}
+      
+      table, tbody, tr, td {{ 
+        display: block; 
+        width: 100%;
+      }}
+      
+      tr {{
+        padding: 1rem 0;
+        border-bottom: 4px solid var(--bg);
+      }}
+      
+      tr:last-child {{
+        border-bottom: none;
+      }}
+      
+      td {{
+        border: none;
+        padding: 0.5rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        text-align: right;
+      }}
+      
+      td::before {{
+        content: attr(data-label);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        display: block;
+        text-align: left;
+        margin-right: 1rem;
+        flex-shrink: 0;
+        padding-top: 0.1rem;
+      }}
+      
+      .cve-id, .package-name, .fixed-in, .description {{
+        max-width: none;
+        text-align: right;
+      }}
+      
+      .description {{
+        display: block;
+        text-align: left;
+        margin-top: 0.25rem;
+      }}
+      
+      .description::before {{
+        margin-bottom: 0.5rem;
+      }}
     }}
     
     .cve-id {{
@@ -312,6 +389,7 @@ page = f"""<!DOCTYPE html>
       display: flex;
       align-items: center;
       flex: 1;
+      min-width: 200px;
     }}
     
     .status-badge {{
@@ -418,12 +496,12 @@ for name in sorted(apps.keys()):
                 
             page += f'''
               <tr>
-                <td class="cve-id">{html.escape(v["id"])}</td>
-                <td><span class="badge {badge_cls}">{sev}</span></td>
-                <td class="package-name">{html.escape(v["package"])}</td>
-                <td><span class="arch-badge">{html.escape(archs)}</span></td>
-                <td class="fixed-in">{fixed}</td>
-                <td class="description" title="{html.escape(v.get('description', ''))}">{desc}</td>
+                <td data-label="CVE ID" class="cve-id">{html.escape(v["id"])}</td>
+                <td data-label="Severity"><span class="badge {badge_cls}">{sev}</span></td>
+                <td data-label="Package" class="package-name">{html.escape(v["package"])}</td>
+                <td data-label="Arch"><span class="arch-badge">{html.escape(archs)}</span></td>
+                <td data-label="Fixed Version" class="fixed-in">{fixed}</td>
+                <td data-label="Description" class="description" title="{html.escape(v.get('description', ''))}">{desc}</td>
               </tr>
             '''
         page += "</tbody></table></div>"
