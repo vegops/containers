@@ -39,3 +39,14 @@ subpackages:
         - miniupnpc=${{package.full-version}}
     pipeline:
       - uses: split/dev
+
+update:
+  enabled: true
+  github:
+    identifier: miniupnp/miniupnp
+    use-tag: true
+    tag-filter-prefix: miniupnpc_2_3_
+    strip-prefix: miniupnpc_
+  version-transform:
+    - match: ^([0-9]+)_([0-9]+)_([0-9]+)$
+      replace: ${1}.${2}.${3}
