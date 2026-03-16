@@ -43,6 +43,8 @@ pipeline:
       PREFIX=/usr \
       make install-static
 
+      strip --strip-unneeded "${{targets.destdir}}/usr/lib/librocksdb.a"
+
 update:
   enabled: true
   github:
