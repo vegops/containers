@@ -1,0 +1,88 @@
+package:
+  name: adguard
+  version: 0.107.73 # renovate: datasource=github-releases depName=AdguardTeam/AdGuardHome
+  epoch: 0
+  description: Network-wide ads and trackers blocking DNS server
+  copyright:
+    - license: GPL-3.0
+
+environment:
+  contents:
+    repositories:
+      - &wolfi-repository https://packages.wolfi.dev/os
+    keyring:
+      - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - go
+      - gpg
+      - gzip
+      - make
+      - nodejs
+      - npm
+      - yarn
+      - zip
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/AdguardTeam/AdGuardHome.git
+      tag: v${{package.version}}
+
+  - runs: |
+      case "${{build.arch}}" in
+        x86_64)  TARGETARCH="amd64" ;;
+        aarch64) TARGETARCH="arm64" ;;
+      esac
+
+      sed -i 's|unix.CAP_NET_BIND_SERVICE,|0,|' ./internal/aghnet/net_linux.go
+      sed -i 's|unix.PR_CAP_AMBIENT,|unix.PR_CAPBSET_READ,|' ./internal/aghnet/net_linux.go
+      sed -i 's|unix.PR_CAP_AMBIENT_IS_SET,|unix.CAP_NET_BIND_SERVICE,|' ./internal/aghnet/net_linux.go
+      go mod tidy
+
+      make \
+        OS=linux \
+        ARCH="${TARGETARCH}" \
+        CHANNEL="release" \
+        VERSION="${{package.version}}" \
+        SIGN=0 \
+        VERBOSE=3 \
+        build-release
+
+      mkdir -p "${{targets.destdir}}/usr/bin"
+      cp -a "dist/AdGuardHome_linux_${TARGETARCH}/AdGuardHome/AdGuardHome" "${{targets.destdir}}/usr/bin/AdGuardHome"
+
+  - runs: |
+      mkdir -p "${{targets.destdir}}/adguard/etc"
+      mkdir -p "${{targets.destdir}}/adguard/var"
+      mkdir -p "${{targets.destdir}}/adguard/run"
+
+  - uses: strip
+
+update:
+  enabled: true
+  github:
+    identifier: AdguardTeam/AdGuardHome
+    use-tag: true
+    tag-filter-prefix: v0.107.
+    strip-prefix: v
+
+test:
+  environment:
+    contents:
+      repositories:
+        - *wolfi-repository
+      keyring:
+        - *wolfi-keyring
+      packages:
+        - apk-tools
+        - busybox
+        - posix-libc-utils
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - name: Basic AdGuard command test
+      runs: |
+        AdGuardHome --version >/dev/null 2>&1 || \
+        AdGuardHome --help >/dev/null 2>&1

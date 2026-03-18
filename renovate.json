@@ -42,6 +42,20 @@
       ],
       "extractVersion": "^v(?<version>.*)$",
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?:knots|\\.)(?<patch>\\d+)$"
+    },
+    {
+      "matchPackageNames": [
+        "AdguardTeam/AdGuardHome",
+        "arvidn/libtorrent",
+        "VueTorrent/VueTorrent"
+      ],
+      "extractVersion": "^v(?<version>.*)$"
+    },
+    {
+      "matchPackageNames": [
+        "qbittorrent/qBittorrent"
+      ],
+      "extractVersion": "^release-(?<version>.*)$"
     }
   ],
   "customManagers": [
