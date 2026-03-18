@@ -1,0 +1,82 @@
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  packages:
+    - wolfi-baselayout
+    - ca-certificates-bundle
+    - nodejs-22-minimal
+    - tzdata
+    - seerr
+
+accounts:
+  groups:
+    - groupname: nonroot
+      gid: 65532
+  users:
+    - username: nonroot
+      uid: 65532
+      gid: 65532
+  run-as: "65532"
+
+entrypoint:
+  command: /usr/bin/node
+
+cmd: /usr/lib/seerr/dist/index.js
+
+work-dir: /usr/lib/seerr
+
+environment:
+  CONFIG_DIRECTORY: /config
+  HOME: /config
+  HOST: 0.0.0.0
+  NODE_ENV: production
+  PORT: "5055"
+  TZ: UTC
+
+volumes:
+  - /config
+
+paths:
+  - path: /config
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /config/cache
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /config/cache/images
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /config/db
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /config/logs
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /tmp
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o1777
+
+annotations:
+  org.opencontainers.image.title: "seerr"
+  org.opencontainers.image.description: "Hardened Seerr image built on Wolfi with daily CVE patches"
+  org.opencontainers.image.url: "https://github.com/vegops/containers"
+  org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/seerr"
+  org.opencontainers.image.licenses: "MIT"
+
+archs:
+  - x86_64
+  - aarch64

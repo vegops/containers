@@ -43,6 +43,7 @@
 | `ghcr.io/vegops/prowlarr`      | Prowlarr indexer manager | Compiled from source (.NET + yarn) |
 | `ghcr.io/vegops/qt-minimal`    | Minimal Qt 6             | Compiled from source (CMake)       |
 | `ghcr.io/vegops/radarr`        | Radarr movie manager     | Compiled from source (.NET + yarn) |
+| `ghcr.io/vegops/seerr`         | Seerr request manager    | Compiled from source (Node + pnpm) |
 | `ghcr.io/vegops/rocksdb`       | RocksDB static library   | Compiled from source (make)        |
 | `ghcr.io/vegops/sonarr`        | Sonarr TV manager        | Compiled from source (.NET + yarn) |
 | `ghcr.io/vegops/sqlite`        | SQLite CLI               | Wolfi package (apko-only)          |

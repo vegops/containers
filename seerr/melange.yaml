@@ -1,0 +1,101 @@
+package:
+  name: seerr
+  version: 3.1.0 # renovate: datasource=github-releases depName=seerr-team/seerr
+  epoch: 0
+  description: Media request manager for Jellyfin, Plex, Emby, Radarr, and Sonarr
+  copyright:
+    - license: MIT
+
+environment:
+  contents:
+    repositories:
+      - &wolfi-repository https://packages.wolfi.dev/os
+    keyring:
+      - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - bash
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - git
+      - nodejs-22-minimal
+      - npm
+      - pnpm
+      - python3
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/seerr-team/seerr.git
+      tag: v${{package.version}}
+
+  - runs: |
+      case "${{build.arch}}" in
+        x86_64)  node_arch="x64" ;;
+        aarch64) node_arch="arm64" ;;
+      esac
+
+      export HOME="${PWD}/.home"
+      mkdir -p "${HOME}"
+      prodroot="${PWD}/.prod-deps"
+      mkdir -p "${prodroot}"
+
+      cp -a package.json pnpm-lock.yaml .npmrc bin "${prodroot}/"
+
+      (
+        cd "${prodroot}"
+        CI=true pnpm install --prod --frozen-lockfile
+      )
+
+      CI=true CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile
+      COMMIT_TAG="v${{package.version}}" pnpm build
+
+      rm -rf .next/cache
+      find "${prodroot}/node_modules" -type d \( -name '*musl*' -o -name 'win64-bin' -o -name 'osx-bin' \) -prune -exec rm -rf {} +
+      find "${prodroot}/node_modules" -type f \( -name '*.dll' -o -name '*.exe' -o -name '*.node' -path '*musl*' \) -delete
+      find "${prodroot}/node_modules" -type d -path '*/prebuilds/*' ! -name "linux-${node_arch}" -prune -exec rm -rf {} +
+
+      mkdir -p "${{targets.destdir}}/usr/lib/seerr"
+      cp -a \
+        .next \
+        dist \
+        next.config.js \
+        package.json \
+        public \
+        seerr-api.yml \
+        "${{targets.destdir}}/usr/lib/seerr/"
+      cp -a "${prodroot}/node_modules" "${{targets.destdir}}/usr/lib/seerr/"
+
+      printf '{"commitTag":"v%s"}\n' "${{package.version}}" > "${{targets.destdir}}/usr/lib/seerr/committag.json"
+
+      mkdir -p \
+        "${{targets.destdir}}/config/cache/images" \
+        "${{targets.destdir}}/config/db" \
+        "${{targets.destdir}}/config/logs"
+      : > "${{targets.destdir}}/config/DOCKER"
+
+update:
+  enabled: true
+  github:
+    identifier: seerr-team/seerr
+    use-tag: true
+    tag-filter-prefix: v3.
+    strip-prefix: v
+
+test:
+  environment:
+    contents:
+      repositories:
+        - *wolfi-repository
+      keyring:
+        - *wolfi-keyring
+      packages:
+        - busybox
+        - nodejs-22-minimal
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - name: Basic Seerr package test
+      runs: |
+        test -f /usr/lib/seerr/dist/index.js
+        test -f /usr/lib/seerr/package.json
+        node -e "const pkg = require('/usr/lib/seerr/package.json'); if (pkg.version !== '${{package.version}}') process.exit(1)"
