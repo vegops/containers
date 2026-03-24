@@ -1,0 +1,91 @@
+package:
+  name: openssl-static
+  version: 3.6.1 # renovate: datasource=github-tags depName=openssl/openssl
+  epoch: 0
+  description: OpenSSL static libraries
+  copyright:
+    - license: Apache-2.0
+
+environment:
+  contents:
+    repositories:
+      - &wolfi-repository https://packages.wolfi.dev/os
+    keyring:
+      - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - busybox
+      - perl
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/openssl/openssl
+      tag: openssl-${{package.version}}
+      expected-commit: c9a9e5b10105ad850b6e4d1122c645c67767c341
+
+  - uses: patch
+    with:
+      patches: |
+        CVE-2026-2673.patch
+
+  - runs: |
+      [ "${{build.arch}}" == "armv7" ] && \
+        openssl_target="linux-generic32"
+
+      ./Configure \
+        "${openssl_target:-}" \
+        -static \
+        --openssldir=/etc/ssl
+
+      make -s -j "$(nproc)"
+      make -s -j "$(nproc)" install_sw
+
+  - runs: |
+      mkdir -p "${{targets.destdir}}/usr/lib"
+      cp -af libssl.a    "${{targets.destdir}}/usr/lib"
+      cp -af libcrypto.a "${{targets.destdir}}/usr/lib"
+
+      mkdir -p "${{targets.destdir}}/usr/include/openssl"
+      cp -af include/openssl/* "${{targets.destdir}}/usr/include/openssl/"
+
+      mkdir -p "${{targets.destdir}}/usr/lib/pkgconfig"
+      cp -af exporters/*.pc "${{targets.destdir}}/usr/lib/pkgconfig/"
+
+      mkdir -p "${{targets.destdir}}/usr/lib/cmake/OpenSSL"
+      cp -af exporters/*.cmake "${{targets.destdir}}/usr/lib/cmake/OpenSSL/"
+
+  - uses: strip
+
+update:
+  enabled: true
+  github:
+    identifier: openssl/openssl
+    use-tag: true
+    tag-filter-prefix: openssl-3.6.
+    strip-prefix: openssl-
+
+test:
+  environment:
+    contents:
+      repositories:
+        - *wolfi-repository
+      keyring:
+        - *wolfi-keyring
+      packages:
+        - busybox
+        - pkgconf
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - name: Check static-link development files
+      runs: |
+        test -f /usr/include/openssl/ssl.h
+        test -f /usr/include/openssl/crypto.h
+        test -s /usr/lib/libssl.a
+        test -s /usr/lib/libcrypto.a
+        test ! -e /usr/lib/libssl.so
+        test ! -e /usr/lib/libcrypto.so
+        test ! -e /usr/bin/openssl
+        test -f /usr/lib/pkgconfig/libssl.pc || test -f /usr/lib/pkgconfig/openssl.pc
+        test -f /usr/lib/cmake/OpenSSL/OpenSSLConfig.cmake
+        pkgconf --exists libcrypto libssl openssl
