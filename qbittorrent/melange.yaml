@@ -22,23 +22,23 @@ environment:
     keyring:
       - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     packages:
+      - boost-dev
       - build-base
       - busybox
       - clang-18
       - cmake
       - curl
-      - boost-dev
       - dotnet-10-sdk
       - git
       - jq
       - libtorrent
       - linux-headers
+      - openssl-static
       - pkgconf
       - qt-minimal
       - samurai
       - sqlite-dev
       - unzip
-      - openssl-dev
       - zlib-dev
       - zlib-static
 
@@ -77,6 +77,12 @@ pipeline:
         -DCMAKE_PREFIX_PATH="/usr" \
         -DCMAKE_BUILD_TYPE="Release" \
         -DCMAKE_CXX_STANDARD="17" \
+        -DCMAKE_EXE_LINKER_FLAGS="-static" \
+        -DOPENSSL_USE_STATIC_LIBS=TRUE \
+        -DOPENSSL_ROOT_DIR="/usr" \
+        -DOPENSSL_INCLUDE_DIR="/usr/include" \
+        -DOPENSSL_SSL_LIBRARY="/usr/lib/libssl.a" \
+        -DOPENSSL_CRYPTO_LIBRARY="/usr/lib/libcrypto.a" \
         -DZLIB_INCLUDE_DIR="/usr/include" \
         -DZLIB_LIBRARY="/usr/lib/libz.a"
 
