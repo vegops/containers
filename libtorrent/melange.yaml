@@ -1,0 +1,78 @@
+package:
+  name: libtorrent
+  version: 2.0.12 # renovate: datasource=github-releases depName=arvidn/libtorrent
+  epoch: 0
+  description: libtorrent-rasterbar BitTorrent library
+  copyright:
+    - license: BSD-1-Clause
+
+environment:
+  environment:
+    LANG: C.UTF-8
+  contents:
+    repositories:
+      - &wolfi-repository https://packages.wolfi.dev/os
+    keyring:
+      - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - busybox
+      - clang-18
+      - cmake
+      - boost-dev
+      - linux-headers
+      - pkgconf
+      - samurai
+      - openssl-dev
+      - zlib-dev
+      - zlib-static
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/arvidn/libtorrent.git
+      tag: v${{package.version}}
+      recurse-submodules: "true"
+
+  - uses: cmake/configure
+    with:
+      opts: |
+        -Wno-dev \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_CXX_STANDARD=17 \
+        -DCMAKE_INSTALL_LIBDIR="lib" \
+        -DCMAKE_INSTALL_PREFIX="/usr" \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DZLIB_INCLUDE_DIR="/usr/include" \
+        -DZLIB_LIBRARY="/usr/lib/libz.a"
+
+  - uses: cmake/build
+
+  - uses: cmake/install
+
+  - uses: strip
+
+update:
+  enabled: true
+  github:
+    identifier: arvidn/libtorrent
+    use-tag: true
+    tag-filter-prefix: v2.0.
+    strip-prefix: v
+
+test:
+  environment:
+    contents:
+      repositories:
+        - *wolfi-repository
+      keyring:
+        - *wolfi-keyring
+      packages:
+        - apk-tools
+        - busybox
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - name: Check libtorrent library installed
+      runs: |
+        ls /usr/lib/libtorrent-rasterbar.a
+        ls /usr/include/libtorrent/version.hpp
