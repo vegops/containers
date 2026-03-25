@@ -207,7 +207,7 @@ jobs:
       contents: read
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 1
       matrix:
         name: ${{ fromJson(needs.discover.outputs.deps_build_order) }}
         arch: [x86_64, aarch64]
