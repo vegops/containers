@@ -19,14 +19,14 @@ environment:
       - git
       - linux-headers
       - mesa-dev
-      - openssl-static
+      - openssl-dev
       - perl
       - samurai
 
 pipeline:
   - uses: git-checkout
     with:
-      repository: https://github.com/qt/qtbase
+      repository: https://github.com/qt/qtbase.git
       tag: v${{package.version}}
 
   - runs: |

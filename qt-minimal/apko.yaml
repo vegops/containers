@@ -6,7 +6,6 @@ contents:
   packages:
     - wolfi-baselayout
     - ca-certificates-bundle
-    - tzdata
     - qt-minimal
 
 accounts:
