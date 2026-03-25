@@ -15,6 +15,7 @@ environment:
     packages:
       - build-base
       - busybox
+      - jitterentropy-library-dev
       - perl
 
 pipeline:
@@ -40,6 +41,16 @@ pipeline:
 
       make -s -j "$(nproc)"
       make -s -j "$(nproc)" install_sw
+
+  - runs: |
+      # Merge jitterentropy objects into libcrypto.a so consumers
+      # don't need to explicitly link -ljitterentropy
+      tmpdir=$(mktemp -d)
+      cd "$tmpdir"
+      ar x /usr/lib/libjitterentropy.a
+      ar rcs "$OLDPWD/libcrypto.a" *.o
+      cd "$OLDPWD"
+      rm -rf "$tmpdir"
 
   - runs: |
       mkdir -p "${{targets.destdir}}/usr/lib"
