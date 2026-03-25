@@ -19,7 +19,7 @@ environment:
       - git
       - linux-headers
       - mesa-dev
-      - openssl-dev
+      - openssl-static
       - perl
       - samurai
 
@@ -42,6 +42,7 @@ pipeline:
         -no-dbus \
         -no-widgets \
         -no-feature-animation \
+        -no-feature-libresolv \
         -openssl \
         -openssl-linked \
         -optimize-size \

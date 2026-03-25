@@ -23,7 +23,7 @@ environment:
       - linux-headers
       - pkgconf
       - samurai
-      - openssl-dev
+      - openssl-static
       - zlib-dev
       - zlib-static
 
@@ -42,7 +42,9 @@ pipeline:
         -DCMAKE_CXX_STANDARD=17 \
         -DCMAKE_INSTALL_LIBDIR="lib" \
         -DCMAKE_INSTALL_PREFIX="/usr" \
+        -DCMAKE_EXE_LINKER_FLAGS="-static" \
         -DBUILD_SHARED_LIBS=OFF \
+        -DOPENSSL_USE_STATIC_LIBS=TRUE \
         -DZLIB_INCLUDE_DIR="/usr/include" \
         -DZLIB_LIBRARY="/usr/lib/libz.a"
 

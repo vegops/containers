@@ -17,7 +17,7 @@ environment:
       - build-base
       - jemalloc-dev
       - lz4-dev
-      - openssl-dev
+      - openssl-static
       - pkgconf
       - qt-minimal
       - rocksdb

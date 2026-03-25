@@ -6,7 +6,6 @@ contents:
   packages:
     - wolfi-baselayout
     - ca-certificates-bundle
-    - openssl
     - tzdata
     - qbittorrent
 
