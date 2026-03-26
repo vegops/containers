@@ -27,7 +27,7 @@ concurrency:
 env:
   REGISTRY_HOST: ghcr.io
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
-  MELANGE_VERSION: v0.46.0 # renovate: datasource=github-releases depName=chainguard-dev/melange
+  MELANGE_VERSION: v0.46.1 # renovate: datasource=github-releases depName=chainguard-dev/melange
   APKO_VERSION: v1.1.16 # renovate: datasource=github-releases depName=chainguard-dev/apko
   MELANGE_SIGNING_KEY: ${{ secrets.MELANGE_SIGNING_KEY }}
   MELANGE_SIGNING_KEY_PUB: ${{ secrets.MELANGE_SIGNING_KEY_PUB }}
