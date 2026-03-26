@@ -471,7 +471,7 @@ jobs:
           apko-version: ${{ env.APKO_VERSION }}
           melange-version: ${{ env.MELANGE_VERSION }}
 
-      - uses: sigstore/cosign-installer@v4.1.0
+      - uses: sigstore/cosign-installer@v4.1.1
 
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
