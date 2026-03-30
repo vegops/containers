@@ -28,7 +28,7 @@ env:
   REGISTRY_HOST: ghcr.io
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
   MELANGE_VERSION: v0.46.1 # renovate: datasource=github-releases depName=chainguard-dev/melange
-  APKO_VERSION: v1.1.16 # renovate: datasource=github-releases depName=chainguard-dev/apko
+  APKO_IMAGE: ghcr.io/wolfi-dev/sdk:latest@sha256:71c60c596fd1414e0a765ac3980b757370da83ab1573a6d34a0e2ce991efd754 # renovate: datasource=docker depName=ghcr.io/wolfi-dev/sdk
   MELANGE_SIGNING_KEY: ${{ secrets.MELANGE_SIGNING_KEY }}
   MELANGE_SIGNING_KEY_PUB: ${{ secrets.MELANGE_SIGNING_KEY_PUB }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -192,14 +192,14 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install melange
-        uses: ./.github/actions/setup-tools
+        uses: chainguard-dev/actions/setup-melange@8bb24c24be6871bee44f19be55ea11e3b2aea3dd # v1.6.11
         with:
-          melange-version: ${{ env.MELANGE_VERSION }}
+          version: ${{ env.MELANGE_VERSION }}
 
       - name: Generate ephemeral signing key
-        run: |
-          echo "Generating ephemeral key for PR build (not used for publishing)"
-          melange keygen
+        uses: chainguard-dev/actions/melange-keygen@8bb24c24be6871bee44f19be55ea11e3b2aea3dd # v1.6.11
+        with:
+          signing-key-path: ${{ github.workspace }}/melange.rsa
 
       - name: Upload signing key
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -465,11 +465,10 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install build tools
-        uses: ./.github/actions/setup-tools
+      - name: Install melange
+        uses: chainguard-dev/actions/setup-melange@8bb24c24be6871bee44f19be55ea11e3b2aea3dd # v1.6.11
         with:
-          apko-version: ${{ env.APKO_VERSION }}
-          melange-version: ${{ env.MELANGE_VERSION }}
+          version: ${{ env.MELANGE_VERSION }}
 
       - uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
 
@@ -522,23 +521,21 @@ jobs:
         with:
           package-name: ${{ matrix.name }}
 
+      - name: Clean SBOMs (x86_64)
+        run: rm -f sbom-*.spdx.json
+
       - name: Build image tarball (x86_64)
-        run: |
-          rm -f sbom-*.spdx.json
+        uses: chainguard-images/actions/apko-build@4cc7e323e19d69d9b9285a36cbcfb4a15651db17 # v1.0.21
+        with:
+          apko-image: ${{ env.APKO_IMAGE }}
+          config: ${{ matrix.name }}/apko.yaml
+          tag: ${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:verify-x86_64
+          keyring-append: ./melange.rsa.pub
+          repository-append: ./packages
+          archs: x86_64
 
-          ARGS=""
-          if [ -f "melange.rsa.pub" ]; then
-            ARGS="$ARGS --keyring-append ./melange.rsa.pub"
-          fi
-          if [ -d "./packages" ]; then
-            ARGS="$ARGS --repository-append ./packages"
-          fi
-
-          apko build "${{ matrix.name }}/apko.yaml" \
-            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:verify-x86_64" \
-            "${{ matrix.name }}-x86_64.tar" \
-            --arch x86_64 \
-            $ARGS
+      - name: Rename tarball (x86_64)
+        run: mv output.tar ${{ matrix.name }}-x86_64.tar
 
       - name: Scan image (x86_64)
         uses: ./.github/actions/scan-image
@@ -547,23 +544,21 @@ jobs:
           image-name: ${{ matrix.name }}
           arch: x86_64
 
+      - name: Clean SBOMs (aarch64)
+        run: rm -f sbom-*.spdx.json
+
       - name: Build image tarball (aarch64)
-        run: |
-          rm -f sbom-*.spdx.json
+        uses: chainguard-images/actions/apko-build@4cc7e323e19d69d9b9285a36cbcfb4a15651db17 # v1.0.21
+        with:
+          apko-image: ${{ env.APKO_IMAGE }}
+          config: ${{ matrix.name }}/apko.yaml
+          tag: ${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:verify-aarch64
+          keyring-append: ./melange.rsa.pub
+          repository-append: ./packages
+          archs: aarch64
 
-          ARGS=""
-          if [ -f "melange.rsa.pub" ]; then
-            ARGS="$ARGS --keyring-append ./melange.rsa.pub"
-          fi
-          if [ -d "./packages" ]; then
-            ARGS="$ARGS --repository-append ./packages"
-          fi
-
-          apko build "${{ matrix.name }}/apko.yaml" \
-            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:verify-aarch64" \
-            "${{ matrix.name }}-aarch64.tar" \
-            --arch aarch64 \
-            $ARGS
+      - name: Rename tarball (aarch64)
+        run: mv output.tar ${{ matrix.name }}-aarch64.tar
 
       - name: Scan image (aarch64)
         uses: ./.github/actions/scan-image
@@ -574,27 +569,30 @@ jobs:
 
       - name: Publish multi-arch image
         if: github.event_name != 'pull_request'
-        run: |
-          ARGS=""
-          if [ -f "melange.rsa.pub" ]; then
-            ARGS="$ARGS --keyring-append ./melange.rsa.pub"
-          fi
-          if [ -d "./packages" ]; then
-            ARGS="$ARGS --repository-append ./packages"
-          fi
+        id: publish
+        uses: chainguard-images/actions/apko-publish@4cc7e323e19d69d9b9285a36cbcfb4a15651db17 # v1.0.21
+        with:
+          apko-image: ${{ env.APKO_IMAGE }}
+          config: ${{ matrix.name }}/apko.yaml
+          tag: ${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}
+          keyring-append: ./melange.rsa.pub
+          repository-append: ./packages
+          archs: x86_64,aarch64
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-          apko publish "${{ matrix.name }}/apko.yaml" \
-            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}" \
-            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:latest" \
-            --arch x86_64,aarch64 \
-            $ARGS
+      - name: Tag latest
+        if: github.event_name != 'pull_request'
+        run: |
+          docker buildx imagetools create \
+            -t ${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:latest \
+            ${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}
 
       - name: Sign image with cosign
         if: github.event_name != 'pull_request'
         run: |
           cosign sign \
             --yes \
-            "${{ env.REGISTRY_NAMESPACE }}/${{ matrix.name }}:${{ steps.version.outputs.tag }}"
+            "${{ steps.publish.outputs.digest }}"
 
   ##############################################################################
   # SUMMARY                                                                    #

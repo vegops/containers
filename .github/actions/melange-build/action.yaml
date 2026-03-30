@@ -31,11 +31,9 @@ runs:
   using: composite
   steps:
     - name: Install melange
-      shell: bash
-      run: |
-        set -euo pipefail
-        go install chainguard.dev/melange@${{ inputs.melange-version }}
-        echo "$HOME/go/bin" >> "$GITHUB_PATH"
+      uses: chainguard-dev/actions/setup-melange@8bb24c24be6871bee44f19be55ea11e3b2aea3dd # v1.6.11
+      with:
+        version: ${{ inputs.melange-version }}
 
     - name: Download ephemeral signing key (PR)
       if: ${{ inputs.event-name == 'pull_request' }}
@@ -72,27 +70,25 @@ runs:
         fi
 
     - name: Build package with melange
-      shell: bash
-      run: |
-        set -euo pipefail
-        chmod 600 melange.rsa
-        melange build "${{ inputs.package-name }}/melange.yaml" \
-          --arch "${{ inputs.arch }}" \
-          --signing-key melange.rsa \
-          --repository-append ./packages \
-          --keyring-append ./melange.rsa.pub \
-          --out-dir ./packages \
-          --runner docker
+      uses: chainguard-dev/actions/melange-build-pkg@8bb24c24be6871bee44f19be55ea11e3b2aea3dd # v1.6.11
+      with:
+        config: ${{ inputs.package-name }}/melange.yaml
+        archs: ${{ inputs.arch }}
+        sign-with-key: true
+        signing-key-path: ${{ github.workspace }}/melange.rsa
+        repository-path: ${{ github.workspace }}/packages
+        repository-append: ${{ github.workspace }}/packages
+        keyring-append: ${{ github.workspace }}/melange.rsa.pub
+        source-dir: ${{ github.workspace }}
 
     - name: Run smoke tests
       shell: bash
       run: |
         set -euo pipefail
-        melange test "${{ inputs.package-name }}/melange.yaml" \
+        sudo melange test "${{ inputs.package-name }}/melange.yaml" \
           --arch "${{ inputs.arch }}" \
           --repository-append ./packages \
-          --keyring-append ./melange.rsa.pub \
-          --runner docker
+          --keyring-append ./melange.rsa.pub
 
     - name: Upload packages
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
