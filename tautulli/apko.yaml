@@ -25,7 +25,7 @@ entrypoint:
   command: /usr/bin/python3
 
 cmd: >-
-  /usr/lib/tautulli/Tautulli.py
+  /opt/tautulli/Tautulli.py
   --nolaunch
   --config /tautulli/etc/config.ini
   --datadir /tautulli/var
@@ -34,7 +34,6 @@ work-dir: /tautulli
 
 environment:
   TAUTULLI_DOCKER: "True"
-  TZ: UTC
 
 volumes:
   - /tautulli/etc
