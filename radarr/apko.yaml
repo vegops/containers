@@ -33,18 +33,14 @@ accounts:
   run-as: "65532"
 
 entrypoint:
-  command: /usr/lib/radarr/Radarr
+  command: /opt/radarr/Radarr
 
-cmd: -nobrowser -data=/config
+cmd: -nobrowser -data=/radarr/etc
 
-work-dir: /config
-
-environment:
-  HOME: /config
-  TZ: UTC
+work-dir: /
 
 paths:
-  - path: /config
+  - path: /radarr/etc
     type: directory
     uid: 65532
     gid: 65532

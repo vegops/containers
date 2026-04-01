@@ -1,7 +1,7 @@
 package:
   name: radarr
   version: 6.0.4.10291 # renovate: datasource=github-releases depName=Radarr/Radarr
-  epoch: 0
+  epoch: 1
   description: Movie collection manager for Usenet and BitTorrent users
   copyright:
     - license: GPL-3.0
@@ -13,6 +13,7 @@ vars:
 
 environment:
   environment:
+    DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     BUILD_SOURCEBRANCHNAME: "v${{package.version}}"
     RADARRVERSION: "${{package.version}}"
   contents:
@@ -36,35 +37,32 @@ pipeline:
       tag: v${{package.version}}
 
   - runs: |
-      case "${{build.arch}}" in
-        x86_64)  rid="linux-x64" ;;
-        aarch64) rid="linux-arm64" ;;
-      esac
-
       echo '{"sdk":{"version":"${{vars.dotnet-sdk-version}}"}}' > global.json
       sed -i 's#<TreatWarningsAsErrors>true</TreatWarningsAsErrors>#<TreatWarningsAsErrors>false</TreatWarningsAsErrors>#' src/Directory.Build.props
 
+  - runs: |
+      case "${{build.arch}}" in
+        x86_64)  rid="x64" ;;
+        aarch64) rid="arm64" ;;
+      esac
+      
       ./build.sh \
         --backend \
         --frontend \
         --packages \
         -f net8.0 \
-        -r "${rid}"
+        -r "linux-${rid}"
 
-      mkdir -p "${{targets.destdir}}/usr/lib/radarr" "${{targets.destdir}}/usr/bin"
-      cp -a "_artifacts/${rid}/net8.0/Radarr/." "${{targets.destdir}}/usr/lib/radarr/"
+  - runs: |
+      mkdir -p "${{targets.destdir}}/opt/radarr"
+      rm -f _output/net*/linux-*/publish/ServiceInstall*
+      rm -f _output/net*/linux-*/publish/ServiceUninstall*
+      rm -f _output/net*/linux-*/publish/Radarr.Windows*
+      cp -af _output/net*/linux-*/publish/. "${{targets.destdir}}/opt/radarr/"
+      cp -af _output/UI "${{targets.destdir}}/opt/radarr/"
 
-      # In containers we do not use the in-app updater, debug symbols, or source maps.
-      rm -rf "${{targets.destdir}}/usr/lib/radarr/Radarr.Update"
-      find "${{targets.destdir}}/usr/lib/radarr" -type f \( -name '*.pdb' -o -name '*.js.map' \) -delete
-      rm -f \
-        "${{targets.destdir}}/usr/lib/radarr/ServiceInstall" \
-        "${{targets.destdir}}/usr/lib/radarr/ServiceUninstall" \
-        "${{targets.destdir}}/usr/lib/radarr/ServiceInstall."* \
-        "${{targets.destdir}}/usr/lib/radarr/ServiceUninstall."* \
-        "${{targets.destdir}}/usr/lib/radarr/createdump" \
-        "${{targets.destdir}}/usr/lib/radarr/libmscordaccore.so" \
-        "${{targets.destdir}}/usr/lib/radarr/libmscordbi.so"
+  - runs: |
+      chmod -R 0755 "${{targets.destdir}}"/opt/radarr/*
 
   - uses: strip
 
@@ -73,7 +71,7 @@ update:
   github:
     identifier: Radarr/Radarr
     use-tag: true
-    tag-filter-prefix: v6.0.
+    tag-filter-prefix: v6.
     strip-prefix: v
 
 test:
