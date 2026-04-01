@@ -39,6 +39,9 @@ cmd: -nobrowser -data=/radarr/etc
 
 work-dir: /
 
+volumes:
+  - /radarr/etc
+
 paths:
   - path: /radarr/etc
     type: directory

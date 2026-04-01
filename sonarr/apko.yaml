@@ -39,6 +39,9 @@ cmd: -nobrowser -data=/sonarr/etc
 
 work-dir: /
 
+volumes:
+  - /sonarr/etc
+
 paths:
   - path: /sonarr/etc
     type: directory

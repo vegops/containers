@@ -39,6 +39,9 @@ cmd: -nobrowser -data=/prowlarr/etc
 
 work-dir: /
 
+volumes:
+  - /prowlarr/etc
+
 paths:
   - path: /prowlarr/etc
     type: directory
