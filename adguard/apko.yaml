@@ -22,12 +22,13 @@ accounts:
 entrypoint:
   command: /usr/bin/AdGuardHome
 
-cmd: --config /adguard/etc/config.yaml --pidfile /adguard/run/adguard.pid --work-dir /adguard/var --no-check-update
+cmd: >-
+  --config /adguard/etc/config.yaml
+  --pidfile /adguard/run/adguard.pid
+  --work-dir /adguard/var
+  --no-check-update
 
-work-dir: /adguard/var
-
-environment:
-  HOME: /adguard/var
+work-dir: /
 
 volumes:
   - /adguard/etc
