@@ -31,7 +31,7 @@ runs:
   using: composite
   steps:
     - name: Install melange
-      uses: chainguard-dev/actions/setup-melange@1fae06d54c372dad7ad8494f025ea8e878ddce91 # v1.6.12
+      uses: chainguard-dev/actions/setup-melange@f45211d3e8f9d2676c6b8cdd6a765435e06c819d # v1.6.13
       with:
         version: ${{ inputs.melange-version }}
 
@@ -70,7 +70,7 @@ runs:
         fi
 
     - name: Build package with melange
-      uses: chainguard-dev/actions/melange-build-pkg@1fae06d54c372dad7ad8494f025ea8e878ddce91 # v1.6.12
+      uses: chainguard-dev/actions/melange-build-pkg@f45211d3e8f9d2676c6b8cdd6a765435e06c819d # v1.6.13
       with:
         config: melange.yaml
         archs: ${{ inputs.arch }}
