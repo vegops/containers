@@ -17,7 +17,7 @@ environment:
     packages:
       - busybox
       - ca-certificates-bundle
-      - python3
+      - python-3.14
 
 pipeline:
   - uses: git-checkout
@@ -68,7 +68,7 @@ test:
         - *wolfi-keyring
       packages:
         - busybox
-        - python3
+        - python-3.14
         - ${{package.name}}=${{package.full-version}}
   pipeline:
     - name: Basic Tautulli package test

@@ -26,7 +26,7 @@ environment:
       - openssl-dev
       - pkgconf
       - postgresql-18-dev
-      - python3
+      - python-3.14
       - rust
       - sqlite-dev
 

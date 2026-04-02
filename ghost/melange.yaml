@@ -28,7 +28,7 @@ environment:
       - nodejs-22-minimal
       - npm
       - py3-setuptools
-      - python3
+      - python-3.14
       - yarn
 
 pipeline:
