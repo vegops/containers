@@ -98,6 +98,7 @@ pipeline:
     runs: |
       arch="$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/')"
       dotnet publish entrypoint.cs -c Release -r "linux-${arch}" -o .
+      rm -rf .local
 
   - name: Install artifacts
     runs: |
@@ -111,10 +112,6 @@ pipeline:
       ln -sf /qbittorrent/var   "${{targets.destdir}}/opt/qBittorrent/data"
       ln -sf /qbittorrent/cache "${{targets.destdir}}/opt/qBittorrent/cache"
       ln -sf /dev/stdout        "${{targets.destdir}}/opt/qBittorrent/logs/qbittorrent.log"
-
-  - name: Clean up dotnet runfile mode
-    runs: |
-      rm -rf .local
 
   - uses: strip
 
