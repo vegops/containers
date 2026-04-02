@@ -1,7 +1,7 @@
 package:
   name: ghost
   version: 6.25.1 # renovate: datasource=npm depName=ghost
-  epoch: 0
+  epoch: 1
   description: Professional publishing platform
   copyright:
     - license: MIT
@@ -11,10 +11,6 @@ package:
 environment:
   environment:
     NODE_ENV: production
-    XDG_CACHE_HOME: /var/cache/melange/xdg
-    XDG_CONFIG_HOME: /var/cache/melange/config
-    YARN_CACHE_FOLDER: /var/cache/melange/yarn
-    npm_config_loglevel: warn
   contents:
     repositories:
       - &wolfi-repository https://packages.wolfi.dev/os
@@ -24,63 +20,59 @@ environment:
       - build-base
       - busybox
       - ca-certificates-bundle
-      - curl
-      - nodejs-22-minimal
+      - node-gyp
+      - nodejs-22
       - npm
-      - py3-setuptools
+      - py3.14-setuptools
       - python-3.14
       - yarn
 
 pipeline:
-  - name: Fetch official Ghost npm package
-    runs: |
-      set -eu
-
-      npm pack "ghost@${{package.version}}" --silent
+  - runs: |
       mkdir -p package
-      tar -xzf "ghost-${{package.version}}.tgz" -C package --strip-components=1
-      rm -f "ghost-${{package.version}}.tgz"
 
-  - name: Install production dependencies and package files
+  - uses: fetch
+    with:
+      uri: https://registry.npmjs.org/ghost/-/ghost-${{package.version}}.tgz
+      expected-sha256: 4d8e5e95e3874d24aa41c54fd20ba58a94aa625cb1018525edfcbff62051fd43 # renovate-fetch: ghost
+      directory: package
+      strip-components: "1"
+      delete: "true"
+
+  - working-directory: package
     runs: |
-      set -eu
-
-      mkdir -p \
-        "${XDG_CACHE_HOME}" \
-        "${XDG_CONFIG_HOME}" \
-        "${YARN_CACHE_FOLDER}" \
-        "${npm_config_cache}"
-
-      case "${{build.arch}}" in
-        x86_64)  node_arch="x64" ;;
-        aarch64) node_arch="arm64" ;;
-      esac
-
-      cd package
-
       yarn install \
         --ignore-scripts \
         --production \
         --non-interactive \
         --prefer-offline
 
-      [ -d node_modules/sqlite3 ] && {
-        (
-          cd node_modules/sqlite3
-          npm run install
-        )
-      }
+  - working-directory: package/node_modules/sqlite3
+    runs: |
+      npm run install
+
+  - working-directory: package
+    runs: |
+      case "${{build.arch}}" in
+        x86_64)  TARGETARCH="x64" ;;
+        aarch64) TARGETARCH="arm64" ;;
+      esac
 
       # Prune unnecessary files from node_modules
       npx --yes @usex/prune-mod@0.0.14 --verbose
       find node_modules -type d \( -name '*musl*' -o -name 'win64-bin' -o -name 'osx-bin' \) -prune -exec rm -rf {} +
       find node_modules -type f \( -name '*.dll' -o -name '*.exe' -o -name '*.node' -path '*musl*' \) -delete
-      find node_modules -type d -path '*/prebuilds/*' ! -name "linux-${node_arch}" -prune -exec rm -rf {} +
+      find node_modules -type d -path '*/prebuilds/*' ! -name "linux-${TARGETARCH}" -prune -exec rm -rf {} +
 
-      mkdir -p log
-      mkdir -p "${{targets.destdir}}/usr/lib/ghost"
-      cp -a . "${{targets.destdir}}/usr/lib/ghost/"
-      install -Dm644 LICENSE "${{targets.destdir}}/usr/share/licenses/ghost/LICENSE"
+  - runs: |
+      mkdir -p "${{targets.destdir}}/opt/ghost"
+      cp -a package/. "${{targets.destdir}}/opt/ghost/"
+
+  - runs: |
+      mkdir -p "${{targets.destdir}}/${{package.name}}/log"
+      mkdir -p "${{targets.destdir}}/${{package.name}}/var"
+      ln -sf /${{package.name}}/var "${{targets.destdir}}/opt/ghost/content"
+      ln -sf /${{package.name}}/log "${{targets.destdir}}/opt/ghost/log"
 
 update:
   enabled: false
@@ -103,12 +95,12 @@ test:
   pipeline:
     - name: Basic Ghost package test
       runs: |
-        test -f /usr/lib/ghost/index.js
-        test ! -e /usr/bin/ghost-entrypoint
-        test ! -e /usr/lib/ghost/config.production.json
-        test -d /usr/lib/ghost/content
-        test -d /usr/lib/ghost/log
-        test -d /usr/lib/ghost/core/built/admin
+        test -f /opt/ghost/index.js
+        test ! -e /opt/ghost/bin/ghost-entrypoint
+        test ! -e /opt/ghost/config.production.json
+        test -d /opt/ghost/content
+        test -d /opt/ghost/log
+        test -d /opt/ghost/core/built/admin
 
-        cd /usr/lib/ghost
+        cd /opt/ghost
         node -e "require('sqlite3'); require('sharp'); const pkg = require('./package.json'); if (pkg.version !== '${{package.version}}') process.exit(1)"

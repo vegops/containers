@@ -23,55 +23,24 @@ accounts:
   run-as: "65532"
 
 entrypoint:
-  command: /usr/bin/node /usr/lib/ghost/index.js
+  command: /usr/bin/node /opt/ghost/index.js
 
-work-dir: /usr/lib/ghost
+work-dir: /
+
+volumes:
+  - /ghost/log
+  - /ghost/var
 
 environment:
   NODE_ENV: production
 
 paths:
-  - path: /usr/lib/ghost/content
+  - path: /ghost/var
     type: directory
     uid: 65532
     gid: 65532
     permissions: 0o755
-  - path: /usr/lib/ghost/content/adapters
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
-  - path: /usr/lib/ghost/content/data
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
-  - path: /usr/lib/ghost/content/images
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
-  - path: /usr/lib/ghost/content/logs
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
-  - path: /usr/lib/ghost/content/public
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
-  - path: /usr/lib/ghost/content/settings
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
-  - path: /usr/lib/ghost/content/themes
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
-  - path: /usr/lib/ghost/log
+  - path: /ghost/log
     type: directory
     uid: 65532
     gid: 65532
