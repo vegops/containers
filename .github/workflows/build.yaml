@@ -542,14 +542,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          sboms=(sbom-*.spdx.json)
-          if [ "${#sboms[@]}" -ne 1 ]; then
-            echo "::error::Expected exactly one x86_64 SBOM, found ${#sboms[@]}"
+          if [ ! -f "sbom-x86_64.spdx.json" ]; then
+            echo "::error::Expected sbom-x86_64.spdx.json after apko build"
             ls -1 sbom-*.spdx.json 2>/dev/null || true
             exit 1
           fi
-          mv "${sboms[0]}" "${{ matrix.name }}-x86_64.spdx.json"
+          mv "sbom-x86_64.spdx.json" "${{ matrix.name }}-x86_64.spdx.json"
+          rm -f sbom-index.spdx.json
 
       - name: Clean SBOMs (aarch64)
         run: rm -f sbom-*.spdx.json
@@ -571,14 +570,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          sboms=(sbom-*.spdx.json)
-          if [ "${#sboms[@]}" -ne 1 ]; then
-            echo "::error::Expected exactly one aarch64 SBOM, found ${#sboms[@]}"
+          if [ ! -f "sbom-aarch64.spdx.json" ]; then
+            echo "::error::Expected sbom-aarch64.spdx.json after apko build"
             ls -1 sbom-*.spdx.json 2>/dev/null || true
             exit 1
           fi
-          mv "${sboms[0]}" "${{ matrix.name }}-aarch64.spdx.json"
+          mv "sbom-aarch64.spdx.json" "${{ matrix.name }}-aarch64.spdx.json"
+          rm -f sbom-index.spdx.json
 
       - name: Resolve release tag
         id: release_tag
