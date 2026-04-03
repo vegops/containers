@@ -1,0 +1,5 @@
+{
+  "repository": "dotnet",
+  "publishLatest": true,
+  "versionSourcePackage": "dotnet-10-runtime"
+}
