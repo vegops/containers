@@ -46,7 +46,7 @@ runs:
         fi
 
         if [ -f "$pkg/melange.yaml" ]; then
-          pkg_version=$(awk '/^  version:/ {print $2; exit}' "$pkg/melange.yaml" | tr -d '"'"'"')
+          pkg_version=$(awk '/^  version:/ {print $2; exit}' "$pkg/melange.yaml" | tr -d '"')
           pkg_epoch=$(awk '/^  epoch:/ {print $2; exit}' "$pkg/melange.yaml")
           release_tag="${pkg_version}-r${pkg_epoch}"
         elif [ -z "$version_source_package" ]; then
