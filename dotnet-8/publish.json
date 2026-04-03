@@ -1,0 +1,5 @@
+{
+  "repository": "dotnet",
+  "publishLatest": false,
+  "versionSourcePackage": "dotnet-8-runtime"
+}
