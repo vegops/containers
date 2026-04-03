@@ -1,0 +1,5 @@
+{
+  "repository": "sqlite",
+  "publishLatest": true,
+  "versionSourcePackage": "sqlite"
+}

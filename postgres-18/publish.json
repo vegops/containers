@@ -1,0 +1,5 @@
+{
+  "repository": "postgres",
+  "publishLatest": true,
+  "versionSourcePackage": "postgresql-18"
+}
