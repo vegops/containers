@@ -30,14 +30,9 @@ environment:
 pipeline:
   - runs: |
       mkdir -p package
-
-  - uses: fetch
-    with:
-      uri: https://registry.npmjs.org/ghost/-/ghost-${{package.version}}.tgz
-      expected-sha256: 4d8e5e95e3874d24aa41c54fd20ba58a94aa625cb1018525edfcbff62051fd43 # renovate-fetch: ghost
-      directory: package
-      strip-components: "1"
-      delete: "true"
+      npm pack "ghost@${{package.version}}" --silent
+      tar -xzf "ghost-${{package.version}}.tgz" -C package --strip-components=1
+      rm -f "ghost-${{package.version}}.tgz"
 
   - working-directory: package
     runs: |
