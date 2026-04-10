@@ -89,6 +89,12 @@ clean_count = sum(1 for app in apps.values() if not app["vulns"])
 with open(os.path.join(SCRIPT_DIR, "style.css")) as f:
     css = f.read()
 
+THEME_BOOTSTRAP_FILE = "theme-bootstrap.js"
+THEME_TOGGLE_FILE = "theme-toggle.js"
+
+SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.75v2.5M12 18.75v2.5M21.25 12h-2.5M5.25 12h-2.5M18.54 5.46l-1.77 1.77M7.23 16.77l-1.77 1.77M18.54 18.54l-1.77-1.77M7.23 7.23L5.46 5.46"></path></svg>'
+MOON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3c-.17.57-.26 1.18-.26 1.8A7 7 0 0 0 19.2 13c.62 0 1.23-.09 1.8-.21Z"></path></svg>'
+
 page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,17 +103,29 @@ page = f"""<!DOCTYPE html>
   <title>VegOps CVE Dashboard</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="{THEME_BOOTSTRAP_FILE}"></script>
   <style>
 {css}
   </style>
+  <script src="{THEME_TOGGLE_FILE}" defer></script>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1><img src="favicon.png" alt="" class="logo">VegOps Security Dashboard</h1>
-      <p class="status-line">
-        <span class="prompt">$</span> scanned {len(apps)} releases <span style="color:var(--border)">|</span> {now}
-      </p>
+      <div class="header-row">
+        <div class="header-copy">
+          <h1><img src="favicon.png" alt="" class="logo">VegOps Security Dashboard</h1>
+          <p class="status-line">
+            <span class="prompt">$</span> scanned {len(apps)} releases <span class="status-sep">|</span> {now}
+          </p>
+        </div>
+        <button type="button" class="theme-toggle" id="theme-toggle">
+          <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">{SUN_ICON}</span>
+          <span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span>
+          <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">{MOON_ICON}</span>
+          <span class="theme-toggle__label" data-theme-label>Auto</span>
+        </button>
+      </div>
     </header>
 """
 
@@ -299,6 +317,9 @@ os.makedirs(site_dir, exist_ok=True)
 
 with open(os.path.join(site_dir, "index.html"), "w") as f:
     f.write(page)
+
+for asset in (THEME_BOOTSTRAP_FILE, THEME_TOGGLE_FILE):
+    shutil.copy(os.path.join(SCRIPT_DIR, asset), os.path.join(site_dir, asset))
 
 # Copy favicon
 logo = os.path.join(PROJECT_ROOT, "logo.png")
