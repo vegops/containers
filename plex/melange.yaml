@@ -1,6 +1,6 @@
 package:
   name: plex
-  version: 1.43.1.10576 # renovate: datasource=custom.plex depName=plex
+  version: 1.43.1.10611 # renovate: datasource=custom.plex depName=plex
   epoch: 0
   description: Plex Media Server
   copyright:
