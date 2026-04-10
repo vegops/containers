@@ -1,6 +1,6 @@
 package:
   name: ghost
-  version: 6.26.0 # renovate: datasource=npm depName=ghost
+  version: 6.27.0 # renovate: datasource=npm depName=ghost
   epoch: 1
   description: Professional publishing platform
   copyright:
