@@ -31,7 +31,7 @@ runs:
   using: composite
   steps:
     - name: Install melange
-      uses: chainguard-dev/actions/setup-melange@f45211d3e8f9d2676c6b8cdd6a765435e06c819d # v1.6.13
+      uses: chainguard-dev/actions/setup-melange@de68b87302e6266db5fb5220246f8aa46fe94b67 # v1.6.14
       with:
         version: ${{ inputs.melange-version }}
 
@@ -70,7 +70,7 @@ runs:
         fi
 
     - name: Build package with melange
-      uses: chainguard-dev/actions/melange-build-pkg@f45211d3e8f9d2676c6b8cdd6a765435e06c819d # v1.6.13
+      uses: chainguard-dev/actions/melange-build-pkg@de68b87302e6266db5fb5220246f8aa46fe94b67 # v1.6.14
       with:
         config: melange.yaml
         archs: ${{ inputs.arch }}
@@ -92,7 +92,7 @@ runs:
           --keyring-append ./melange.rsa.pub
 
     - name: Upload packages
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: packages-${{ inputs.package-name }}-${{ inputs.arch }}
         path: |
