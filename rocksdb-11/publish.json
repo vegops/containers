@@ -1,0 +1,5 @@
+{
+  "repository": "rocksdb",
+  "publishLatest": true,
+  "versionSourcePackage": "rocksdb-11"
+}

@@ -1,0 +1,75 @@
+package:
+  name: rocksdb-11
+  version: 11.0.4
+  epoch: 0
+  description: RocksDB static library
+  copyright:
+    - license: Apache-2.0
+
+environment:
+  contents:
+    repositories:
+      - &wolfi-repository https://packages.wolfi.dev/os
+    keyring:
+      - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - bash
+      - busybox
+      - build-base
+      - clang
+      - linux-headers
+      - make
+      - perl
+      - posix-libc-utils # getconf
+      - snappy-dev
+      - snappy-static
+      - zlib-dev
+      - zlib-static
+      - zstd-dev
+      - zstd-static
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/facebook/rocksdb
+      tag: v${{package.version}}
+
+  - runs: |
+      sed 's/install -C/install -c/g' Makefile > _
+      mv -f _ Makefile
+
+      PORTABLE=1 \
+      DISABLE_JEMALLOC=1 \
+      DEBUG_LEVEL=0 \
+      USE_RTTI=1 \
+      make static_lib -j$(nproc)
+
+      DESTDIR="${{targets.destdir}}" \
+      PREFIX=/usr \
+      make install-static
+
+      strip --strip-unneeded "${{targets.destdir}}/usr/lib/librocksdb.a"
+
+update:
+  enabled: true
+  github:
+    identifier: facebook/rocksdb
+    use-tag: true
+    strip-prefix: v
+
+test:
+  environment:
+    contents:
+      repositories:
+        - *wolfi-repository
+      keyring:
+        - *wolfi-keyring
+      packages:
+        - binutils
+        - busybox
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - runs: |
+        test -s /usr/lib/librocksdb.a
+        test -f /usr/include/rocksdb/db.h
+        nm -A /usr/lib/librocksdb.a | grep ' ZSTD_' >/dev/null
