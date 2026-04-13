@@ -1,7 +1,7 @@
 package:
   name: fulcrum
   version: 2.1.0
-  epoch: 0
+  epoch: 1
   description: Fulcrum SPV server
   copyright:
     - license: GPL-3.0
@@ -20,7 +20,7 @@ environment:
       - openssl-static
       - pkgconf
       - qt-minimal
-      - rocksdb
+      - rocksdb-10
       - snappy-dev
       - zeromq-dev
       - zlib-dev
@@ -54,7 +54,6 @@ update:
   github:
     identifier: cculianu/Fulcrum
     use-tag: true
-    tag-filter-prefix: v2.
     strip-prefix: v
 
 test:

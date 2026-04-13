@@ -4,7 +4,7 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
-    - rocksdb
+    - rocksdb-10
 
 accounts:
   groups:
@@ -20,7 +20,7 @@ annotations:
   org.opencontainers.image.title: "rocksdb"
   org.opencontainers.image.description: "Hardened rocksdb builder image built on Wolfi with daily CVE patches"
   org.opencontainers.image.url: "https://github.com/vegops/containers"
-  org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/rocksdb"
+  org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/rocksdb-10"
   org.opencontainers.image.licenses: "Apache-2.0"
 
 archs:

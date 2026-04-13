@@ -70,6 +70,12 @@
       ],
       "extractVersion": "^(?<version>\\d+\\.\\d+\\.\\d+\\.\\d+)(?:-.+)?$",
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$"
+    },
+    {
+      "matchPackageNames": [
+        "rocksdb-10"
+      ],
+      "allowedVersions": "<11.0.0"
     }
   ],
   "customDatasources": {

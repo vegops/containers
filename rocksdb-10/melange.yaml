@@ -1,7 +1,7 @@
 package:
-  name: rocksdb
+  name: rocksdb-10
   version: 10.10.1
-  epoch: 0
+  epoch: 1
   description: RocksDB static library
   copyright:
     - license: Apache-2.0
@@ -55,7 +55,6 @@ update:
   github:
     identifier: facebook/rocksdb
     use-tag: true
-    tag-filter-prefix: v10.10.
     strip-prefix: v
 
 test:
