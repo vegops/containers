@@ -1,6 +1,6 @@
 package:
   name: vaultwarden
-  version: 1.35.6 # renovate: datasource=github-releases depName=dani-garcia/vaultwarden
+  version: 1.35.7 # renovate: datasource=github-releases depName=dani-garcia/vaultwarden
   epoch: 1
   description: Unofficial Bitwarden-compatible server written in Rust
   copyright:
