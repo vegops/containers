@@ -1,7 +1,7 @@
 package:
   name: bitcoin-core
-  version: 31.0
-  epoch: 0
+  version: 31.0 # renovate: datasource=github-tags depName=bitcoin/bitcoin
+  epoch: 1
   description: Bitcoin Core daemon
   copyright:
     - license: MIT
@@ -21,7 +21,10 @@ environment:
       - linux-headers
       - pkgconf
       - libevent-dev
-      - boost-dev
+      # Temporary pin until bitcoin builds are compatible with Boost 1.91 in Wolfi.
+      - boost-dev=1.90.0
+      - boost-static=1.90.0
+      - boost-tools=1.90.0
       - zeromq-dev
       - libzmq-static
       - gpg
