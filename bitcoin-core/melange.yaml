@@ -1,6 +1,6 @@
 package:
   name: bitcoin-core
-  version: 30.2
+  version: 31.0
   epoch: 0
   description: Bitcoin Core daemon
   copyright:
