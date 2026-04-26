@@ -1,6 +1,6 @@
 package:
   name: i2pd
-  version: 2.59.0
+  version: 2.60.0
   epoch: 0
   description: I2P daemon
   copyright:
