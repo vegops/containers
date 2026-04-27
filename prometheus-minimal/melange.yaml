@@ -1,6 +1,6 @@
 package:
   name: prometheus-minimal
-  version: 3.11.2
+  version: 3.11.3
   epoch: 0
   description: "Minimal Prometheus monitoring server built from source"
   copyright:
