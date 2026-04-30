@@ -7,7 +7,7 @@ package:
     - license: AGPL-3.0-only
 
 vars:
-  web-vault-version: 2026.3.1 # renovate: datasource=docker depName=vaultwarden/web-vault
+  web-vault-version: 2026.4.1 # renovate: datasource=docker depName=vaultwarden/web-vault
 
 environment:
   contents:
