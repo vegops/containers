@@ -1,6 +1,6 @@
 package:
   name: qbittorrent
-  version: 5.1.4 # renovate: datasource=github-tags depName=qbittorrent/qBittorrent
+  version: 5.2.0 # renovate: datasource=github-tags depName=qbittorrent/qBittorrent
   epoch: 0
   description: qBittorrent BitTorrent client
   copyright:
