@@ -1,6 +1,6 @@
 package:
   name: fulcrum
-  version: 2.1.0
+  version: 2.1.1
   epoch: 1
   description: Fulcrum SPV server
   copyright:
