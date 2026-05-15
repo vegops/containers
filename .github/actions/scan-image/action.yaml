@@ -78,7 +78,7 @@ runs:
         mv "$tmpfile" "cve-report-${{ inputs.image-name }}-${{ inputs.arch }}.json"
 
     - name: Upload Grype SARIF
-      uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # v4.35.4
+      uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
       with:
         sarif_file: ${{ steps.grype-sarif.outputs.sarif }}
         category: grype-${{ inputs.image-name }}-${{ inputs.arch }}
@@ -91,7 +91,7 @@ runs:
         output: trivy-results-${{ inputs.image-name }}-${{ inputs.arch }}.sarif
 
     - name: Upload Trivy SARIF
-      uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # v4.35.4
+      uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
       with:
         sarif_file: trivy-results-${{ inputs.image-name }}-${{ inputs.arch }}.sarif
         category: trivy-${{ inputs.image-name }}-${{ inputs.arch }}
