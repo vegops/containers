@@ -1,6 +1,6 @@
 package:
   name: electrs
-  version: 0.11.1
+  version: 0.11.1 # renovate: datasource=github-tags depName=romanz/electrs
   epoch: 1
   description: An efficient re-implementation of Electrum Server in Rust
   copyright:
