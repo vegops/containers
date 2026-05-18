@@ -20,13 +20,7 @@ accounts:
   run-as: "65532"
 
 entrypoint:
-  command: /usr/bin/AdGuardHome
-
-cmd: >-
-  --config /adguard/etc/config.yaml
-  --pidfile /adguard/run/adguard.pid
-  --work-dir /adguard/var
-  --no-check-update
+  command: /usr/bin/entrypoint
 
 work-dir: /
 
