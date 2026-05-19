@@ -1,6 +1,6 @@
 package:
   name: adguard
-  version: 0.107.74 # renovate: datasource=github-releases depName=AdguardTeam/AdGuardHome
+  version: 0.107.75 # renovate: datasource=github-releases depName=AdguardTeam/AdGuardHome
   epoch: 2
   description: Network-wide ads and trackers blocking DNS server
   copyright:
