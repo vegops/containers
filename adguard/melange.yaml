@@ -96,6 +96,5 @@ test:
       runs: |
         test -x /usr/bin/entrypoint
         test -f /usr/share/adguard/config.yaml
-        entrypoint --help >/dev/null 2>&1
-        AdGuardHome --version >/dev/null 2>&1 || \
-        AdGuardHome --help >/dev/null 2>&1
+        entrypoint --version >/dev/null 2>&1
+        AdGuardHome --version >/dev/null 2>&1
