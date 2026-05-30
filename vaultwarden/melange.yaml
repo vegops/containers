@@ -1,7 +1,7 @@
 package:
   name: vaultwarden
   version: 1.36.0 # renovate: datasource=github-releases depName=dani-garcia/vaultwarden
-  epoch: 2
+  epoch: 3
   description: Unofficial Bitwarden-compatible server written in Rust
   copyright:
     - license: AGPL-3.0-only
@@ -39,6 +39,21 @@ pipeline:
     with:
       repository: https://github.com/dani-garcia/vaultwarden
       tag: ${{package.version}}
+
+  - runs: |
+      grep -q '^version[[:space:]]*=[[:space:]]*"1\.0\.0"$' Cargo.toml || {
+        echo "unexpected upstream crate version in Cargo.toml" >&2
+        exit 1
+      }
+
+      sed -i \
+        -e 's/^version[[:space:]]*=[[:space:]]*"1\.0\.0"$/version = "${{package.version}}"/' \
+        Cargo.toml
+
+      grep -q "^version[[:space:]]*=[[:space:]]*\"${{package.version}}\"$" Cargo.toml || {
+        echo "failed to stamp Cargo.toml with package version" >&2
+        exit 1
+      }
 
   - runs: |
       grep -q '^sqlite_system[[:space:]]*=' Cargo.toml || {
