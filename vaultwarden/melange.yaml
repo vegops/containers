@@ -1,7 +1,7 @@
 package:
   name: vaultwarden
   version: 1.36.0 # renovate: datasource=github-releases depName=dani-garcia/vaultwarden
-  epoch: 1
+  epoch: 2
   description: Unofficial Bitwarden-compatible server written in Rust
   copyright:
     - license: AGPL-3.0-only
@@ -19,6 +19,7 @@ environment:
       - bash
       - build-base
       - busybox
+      - cargo-auditable
       - crane
       - curl
       - jq
@@ -29,6 +30,9 @@ environment:
       - rust
       - scanelf
       - sqlite-dev
+  environment:
+    LIBSQLITE3_SYS_USE_PKG_CONFIG: "1"
+    VW_VERSION: ${{package.version}}
 
 pipeline:
   - uses: git-checkout
@@ -62,22 +66,21 @@ pipeline:
         exit 1
       }
 
-  - runs: |
-      export CARGO_HOME="${PWD}/.cargo"
-      export CARGO_TARGET_DIR="${PWD}/target"
-      export LIBSQLITE3_SYS_USE_PKG_CONFIG=1
-      export VW_VERSION="${{package.version}}"
-
-      cargo build \
+  - uses: cargo/build
+    with:
+      output: vaultwarden
+      opts: |
         --release \
         --features sqlite,mysql,postgresql
 
+  - runs: |
       scanelf -n target/release/vaultwarden | grep -q 'libsqlite3\.so' || {
         echo "vaultwarden is not dynamically linked against system sqlite" >&2
         scanelf -n target/release/vaultwarden >&2
         exit 1
       }
 
+  - runs: |
       web_vault_digest="$(curl -fsSL "https://hub.docker.com/v2/repositories/vaultwarden/web-vault/tags/v${{vars.web-vault-version}}" | jq -r '.digest')"
       test -n "${web_vault_digest}" && test "${web_vault_digest}" != "null"
 
@@ -85,11 +88,9 @@ pipeline:
       crane export "docker.io/vaultwarden/web-vault@${web_vault_digest}" - | tar -x -C "${tmpweb}" web-vault
       find "${tmpweb}/web-vault" -type f -name '*.map' -delete
 
-      install -Dm755 target/release/vaultwarden "${{targets.destdir}}/usr/bin/vaultwarden"
-      mkdir -p "${{targets.destdir}}/usr/share/vaultwarden"
-      cp -a "${tmpweb}/web-vault" "${{targets.destdir}}/usr/share/vaultwarden/"
-      install -Dm644 LICENSE.txt "${{targets.destdir}}/usr/share/licenses/vaultwarden/LICENSE.txt"
-      mkdir -p "${{targets.destdir}}/data"
+      mkdir -p "${{targets.destdir}}/vaultwarden/var"
+
+      cp -a "${tmpweb}/web-vault" "${{targets.destdir}}/vaultwarden/"
 
   - uses: strip
 
@@ -113,4 +114,4 @@ test:
     - name: Basic vaultwarden package test
       runs: |
         test -x /usr/bin/vaultwarden
-        test -f /usr/share/vaultwarden/web-vault/index.html
+        test -f /vaultwarden/web-vault/index.html
