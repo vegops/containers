@@ -1,7 +1,7 @@
 package:
   name: bitcoin-knots
   version: 29.3.20260210 # renovate: datasource=github-tags depName=bitcoinknots/bitcoin
-  epoch: 1
+  epoch: 2
   description: Bitcoin Knots daemon
   copyright:
     - license: MIT
@@ -94,7 +94,6 @@ update:
   github:
     identifier: bitcoinknots/bitcoin
     use-tag: true
-    tag-filter-prefix: v29.3.knots
     strip-prefix: v
   version-transform:
     - match: \.knots

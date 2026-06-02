@@ -1,7 +1,7 @@
 package:
   name: adguard
   version: 0.107.76 # renovate: datasource=github-releases depName=AdguardTeam/AdGuardHome
-  epoch: 3
+  epoch: 4
   description: Network-wide ads and trackers blocking DNS server
   copyright:
     - license: GPL-3.0
@@ -57,16 +57,13 @@ pipeline:
       mkdir -p "${{targets.destdir}}/usr/bin"
       cp -a dist/AdGuardHome_linux_*/AdGuardHome/AdGuardHome "${{targets.destdir}}/usr/bin/AdGuardHome"
 
-  - name: Build entrypoint (Native AOT)
+  - name: Build entrypoint
     runs: |
       arch="$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/')"
       dotnet publish entrypoint.cs -c Release -r "linux-${arch}" -o .
       rm -rf .local
 
   - runs: |
-      mkdir -p "${{targets.destdir}}/${{package.name}}/etc"
-      mkdir -p "${{targets.destdir}}/${{package.name}}/var"
-      mkdir -p "${{targets.destdir}}/${{package.name}}/run"
       install -Dm755 entrypoint "${{targets.destdir}}/usr/bin/entrypoint"
       install -Dm644 rootfs/adguard/etc/config.yaml "${{targets.destdir}}/usr/share/adguard/config.yaml"
 
