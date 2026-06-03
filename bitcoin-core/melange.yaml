@@ -111,5 +111,6 @@ test:
         bitcoin-cli --version
         bitcoin-tx --version
         rm -f /bitcoin/etc/bitcoind.conf
+        install -d -m 700 /bitcoin/var /bitcoin/run
         entrypoint --version
         test -f /bitcoin/etc/bitcoind.conf
