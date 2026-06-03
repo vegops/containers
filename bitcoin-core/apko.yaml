@@ -20,13 +20,7 @@ accounts:
   run-as: "65532"
 
 entrypoint:
-  command: >-
-    /usr/bin/bitcoind
-      -conf=/bitcoin/etc/bitcoind.conf
-      -datadir=/bitcoin/var
-      -pid=/bitcoin/run/bitcoind.pid
-      -rpccookiefile=/bitcoin/run/bitcoind.cookie
-      -nodebuglogfile
+  command: /usr/bin/entrypoint
 
 work-dir: /
 

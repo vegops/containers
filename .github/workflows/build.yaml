@@ -28,7 +28,7 @@ concurrency:
 env:
   REGISTRY_HOST: ghcr.io
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
-  MELANGE_VERSION: v0.50.8 # renovate: datasource=github-releases depName=chainguard-dev/melange
+  MELANGE_VERSION: v0.52.0 # renovate: datasource=github-releases depName=chainguard-dev/melange
   APKO_IMAGE: ghcr.io/wolfi-dev/sdk:latest@sha256:71c60c596fd1414e0a765ac3980b757370da83ab1573a6d34a0e2ce991efd754 # renovate: datasource=docker depName=ghcr.io/wolfi-dev/sdk
   MELANGE_SIGNING_KEY: ${{ secrets.MELANGE_SIGNING_KEY }}
   MELANGE_SIGNING_KEY_PUB: ${{ secrets.MELANGE_SIGNING_KEY_PUB }}
@@ -50,7 +50,7 @@ jobs:
       deps_tier_5: ${{ steps.set.outputs.deps_tier_5 }}
       apko_images: ${{ steps.set.outputs.apko_images }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - id: set
         shell: bash
@@ -190,15 +190,15 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Install melange
-        uses: chainguard-dev/actions/setup-melange@c69a264ec2a5934c3186c618f368fc1c86f16cff # v1.6.19
+        uses: chainguard-dev/actions/setup-melange@05fbd381f7c158bd33c9bbf3a28f67852269fdf8 # v1.6.21
         with:
           version: ${{ env.MELANGE_VERSION }}
 
       - name: Generate ephemeral signing key
-        uses: chainguard-dev/actions/melange-keygen@c69a264ec2a5934c3186c618f368fc1c86f16cff # v1.6.19
+        uses: chainguard-dev/actions/melange-keygen@05fbd381f7c158bd33c9bbf3a28f67852269fdf8 # v1.6.21
         with:
           signing-key-path: ${{ github.workspace }}/melange.rsa
 
@@ -229,7 +229,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -263,7 +263,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -296,7 +296,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -336,7 +336,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -377,7 +377,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -419,7 +419,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -464,10 +464,10 @@ jobs:
         name: ${{ fromJson(needs.discover.outputs.apko_images) }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Install melange
-        uses: chainguard-dev/actions/setup-melange@c69a264ec2a5934c3186c618f368fc1c86f16cff # v1.6.19
+        uses: chainguard-dev/actions/setup-melange@05fbd381f7c158bd33c9bbf3a28f67852269fdf8 # v1.6.21
         with:
           version: ${{ env.MELANGE_VERSION }}
 
@@ -526,7 +526,7 @@ jobs:
         run: rm -f sbom-*.spdx.json
 
       - name: Build image tarball (x86_64)
-        uses: chainguard-images/actions/apko-build@ac2ef397bc71340b8ae4b295a023f88628900ac8 # v1.0.29
+        uses: chainguard-images/actions/apko-build@fd1c2dbd37bd78ce8dee6f142cedae81d04b254a # v1.0.30
         with:
           apko-image: ${{ env.APKO_IMAGE }}
           config: ${{ matrix.name }}/apko.yaml
@@ -554,7 +554,7 @@ jobs:
         run: rm -f sbom-*.spdx.json
 
       - name: Build image tarball (aarch64)
-        uses: chainguard-images/actions/apko-build@ac2ef397bc71340b8ae4b295a023f88628900ac8 # v1.0.29
+        uses: chainguard-images/actions/apko-build@fd1c2dbd37bd78ce8dee6f142cedae81d04b254a # v1.0.30
         with:
           apko-image: ${{ env.APKO_IMAGE }}
           config: ${{ matrix.name }}/apko.yaml
@@ -714,7 +714,7 @@ jobs:
       - name: Publish multi-arch image
         if: github.event_name != 'pull_request'
         id: publish
-        uses: chainguard-images/actions/apko-publish@ac2ef397bc71340b8ae4b295a023f88628900ac8 # v1.0.29
+        uses: chainguard-images/actions/apko-publish@fd1c2dbd37bd78ce8dee6f142cedae81d04b254a # v1.0.30
         with:
           apko-image: ${{ env.APKO_IMAGE }}
           config: ${{ matrix.name }}/apko.yaml

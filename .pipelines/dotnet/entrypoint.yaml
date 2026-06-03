@@ -1,0 +1,75 @@
+name: Build a .NET entrypoint
+
+needs:
+  packages:
+    - ${{inputs.sdk-package}}
+    - build-base
+
+inputs:
+  sdk-package:
+    description: |
+      The .NET SDK package to install for publishing the entrypoint.
+    default: dotnet-10-sdk
+
+  source:
+    description: |
+      The C# source file or project to publish.
+    default: entrypoint.cs
+
+  configuration:
+    description: |
+      The .NET build configuration to publish.
+    default: Release
+
+  rid-base:
+    description: |
+      The runtime identifier prefix before the architecture suffix.
+    default: linux
+
+  output-dir:
+    description: |
+      The output directory passed to dotnet publish.
+    default: .
+
+  output-name:
+    description: |
+      The published binary name to install.
+    default: entrypoint
+
+  install-path:
+    description: |
+      The absolute path where the entrypoint should be installed in the package.
+    default: /usr/bin/entrypoint
+
+  cleanup-dir:
+    description: |
+      Directory to remove after publishing.
+    default: .local
+
+pipeline:
+  - runs: |
+      export DOTNET_CLI_TELEMETRY_OPTOUT=1
+      export DOTNET_NOLOGO=true
+      export DOTNET_GENERATE_ASPNET_CERTIFICATE=0
+
+      case "${{build.arch}}" in
+        aarch64) dotnet_arch="arm64" ;;
+        x86_64) dotnet_arch="x64" ;;
+        *)
+          echo "unsupported architecture: ${{build.arch}}" >&2
+          exit 1
+          ;;
+      esac
+
+      dotnet publish "${{inputs.source}}" \
+        -c "${{inputs.configuration}}" \
+        -r "${{inputs.rid-base}}-${dotnet_arch}" \
+        -o "${{inputs.output-dir}}"
+
+      if [ -n "${{inputs.install-path}}" ]; then
+        install -Dm755 "${{inputs.output-dir}}/${{inputs.output-name}}" "${{targets.destdir}}${{inputs.install-path}}"
+      fi
+
+      if [ -n "${{inputs.cleanup-dir}}" ]; then
+        rm -rf "${{inputs.cleanup-dir}}"
+      fi

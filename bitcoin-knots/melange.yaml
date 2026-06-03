@@ -1,7 +1,7 @@
 package:
   name: bitcoin-knots
   version: 29.3.20260210 # renovate: datasource=github-tags depName=bitcoinknots/bitcoin
-  epoch: 2
+  epoch: 3
   description: Bitcoin Knots daemon
   copyright:
     - license: MIT
@@ -87,6 +87,8 @@ pipeline:
 
   - uses: cmake/install
 
+  - uses: dotnet/entrypoint
+
   - uses: strip
 
 update:
@@ -114,9 +116,9 @@ test:
   pipeline:
     - name: Basic bitcoin command test
       runs: |
-        bitcoind --version >/dev/null 2>&1 || \
-        bitcoind --help >/dev/null 2>&1
-        bitcoin-cli --version >/dev/null 2>&1 || \
-        bitcoin-cli --help >/dev/null 2>&1
-        bitcoin-tx --version >/dev/null 2>&1 || \
-        bitcoin-tx --help >/dev/null 2>&1
+        bitcoind --version
+        bitcoin-cli --version
+        bitcoin-tx --version
+        rm -f /bitcoin/etc/bitcoind.conf
+        entrypoint --version
+        test -f /bitcoin/etc/bitcoind.conf

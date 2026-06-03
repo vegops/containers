@@ -1,7 +1,7 @@
 package:
   name: bitcoin-core
   version: 31.0 # renovate: datasource=github-tags depName=bitcoin/bitcoin
-  epoch: 2
+  epoch: 3
   description: Bitcoin Core daemon
   copyright:
     - license: MIT
@@ -81,6 +81,8 @@ pipeline:
 
   - uses: cmake/install
 
+  - uses: dotnet/entrypoint
+
   - uses: strip
 
 update:
@@ -108,3 +110,6 @@ test:
         bitcoind --version
         bitcoin-cli --version
         bitcoin-tx --version
+        rm -f /bitcoin/etc/bitcoind.conf
+        entrypoint --version
+        test -f /bitcoin/etc/bitcoind.conf
