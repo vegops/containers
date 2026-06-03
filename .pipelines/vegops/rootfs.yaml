@@ -1,0 +1,21 @@
+name: Copy rootfs artifacts into the package
+
+needs:
+  packages:
+    - busybox
+
+inputs:
+  source:
+    description: |
+      Source directory (relative to the build context) whose contents will be
+      installed into ${{targets.destdir}}. The directory itself is NOT copied;
+      only its contents, with full subpath, mode, and timestamp preservation.
+    default: rootfs
+
+pipeline:
+  - runs: |
+      if [ ! -d "${{inputs.source}}" ]; then
+        echo "error: ${{inputs.source}}/ does not exist; nothing to install" >&2
+        exit 1
+      fi
+      cp -a "${{inputs.source}}/." "${{targets.destdir}}/"
