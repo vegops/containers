@@ -1,7 +1,7 @@
 package:
   name: seerr
   version: 3.3.0 # renovate: datasource=github-releases depName=seerr-team/seerr
-  epoch: 1
+  epoch: 2
   description: Media request manager for Jellyfin, Plex, Emby, Radarr, and Sonarr
   copyright:
     - license: MIT
@@ -78,7 +78,7 @@ pipeline:
       cp -a \
         .next \
         dist \
-        next.config.js \
+        next.config.ts \
         package.json \
         public \
         seerr-api.yml \
