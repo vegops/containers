@@ -108,6 +108,7 @@ melange-%: keygen $(PACKAGES_DIR)
 			--signing-key /work/$(SIGNING_KEY) \
 			--repository-append /work/$(PACKAGES_DIR) \
 			--keyring-append /work/$(KEYRING) \
+			--pipeline-dir /work/.pipelines \
 			--out-dir /work/$(PACKAGES_DIR); \
 		$(MELANGE) index \
 			--signing-key /work/$(SIGNING_KEY) \
@@ -123,7 +124,8 @@ melangecheck-%: keygen $(PACKAGES_DIR)
 		$(MELANGE) test ./$*/melange.yaml \
 			--arch $(ARCH) \
 			--repository-append /work/$(PACKAGES_DIR) \
-			--keyring-append /work/$(KEYRING); \
+			--keyring-append /work/$(KEYRING) \
+			--pipeline-dirs /work/.pipelines; \
 	else \
 		echo "No melange.yaml found for $*"; \
 	fi

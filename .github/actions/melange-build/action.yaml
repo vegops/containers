@@ -79,6 +79,7 @@ runs:
         repository-path: ${{ github.workspace }}/packages
         repository-append: ${{ github.workspace }}/packages
         keyring-append: ${{ github.workspace }}/melange.rsa.pub
+        pipeline-dir: ${{ github.workspace }}/.pipelines
         source-dir: ${{ github.workspace }}
         workdir: ${{ inputs.package-name }}
 
@@ -89,7 +90,8 @@ runs:
         sudo melange test "${{ inputs.package-name }}/melange.yaml" \
           --arch "${{ inputs.arch }}" \
           --repository-append ./packages \
-          --keyring-append ./melange.rsa.pub
+          --keyring-append ./melange.rsa.pub \
+          --pipeline-dirs "${{ github.workspace }}/.pipelines"
 
     - name: Upload packages
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
