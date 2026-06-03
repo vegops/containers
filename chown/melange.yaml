@@ -1,16 +1,12 @@
 package:
   name: chown
   version: 0.1.0
-  epoch: 0
+  epoch: 1
   description: Minimal chown for distroless containers
   copyright:
     - license: MIT
 
 environment:
-  environment:
-    DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-    DOTNET_NOLOGO: "true"
-    DOTNET_GENERATE_ASPNET_CERTIFICATE: "0"
   contents:
     repositories:
       - &alpine-main-repository https://dl-cdn.alpinelinux.org/alpine/edge/main
@@ -19,16 +15,15 @@ environment:
       - build-base
       - busybox
       - ca-certificates-bundle
-      - dotnet10-sdk
 
 pipeline:
-  - runs: |
-      arch="$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/')"
-      dotnet publish chown.cs -c Release -r "linux-musl-${arch}" -o .
-      rm -rf .local
-
-  - runs: |
-      install -Dm755 chown "${{targets.destdir}}/usr/bin/chown"
+  - uses: dotnet/entrypoint
+    with:
+      sdk-package: dotnet10-sdk
+      source: chown.cs
+      rid-base: linux-musl
+      output-name: chown
+      install-path: /usr/bin/chown
 
   - uses: strip
 
