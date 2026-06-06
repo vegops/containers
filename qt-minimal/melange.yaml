@@ -26,10 +26,10 @@ pipeline:
       repository: https://github.com/qt/qtbase
       tag: v${{package.version}}
 
-  - runs: mkdir output
-
   - runs: |
-      ./configure \
+      mkdir -p output
+      cd output
+      ../configure \
         -static \
         -release \
         -prefix /usr \
