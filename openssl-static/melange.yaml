@@ -1,6 +1,6 @@
 package:
   name: openssl-static
-  version: 3.6.1 # renovate: datasource=github-tags depName=openssl/openssl
+  version: 3.6.2 # renovate: datasource=github-tags depName=openssl/openssl
   epoch: 0
   description: OpenSSL static libraries
   copyright:
@@ -13,58 +13,43 @@ environment:
     keyring:
       - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     packages:
-      - build-base
+      - binutils
       - busybox
-      - jitterentropy-library-dev
-      - perl
+      - openssl-dev
 
 pipeline:
-  - uses: git-checkout
-    with:
-      repository: https://github.com/openssl/openssl
-      tag: openssl-${{package.version}}
-      expected-commit: c9a9e5b10105ad850b6e4d1122c645c67767c341
-
-  - uses: patch
-    with:
-      patches: |
-        CVE-2026-2673.patch
-
-  - runs: |
-      [ "${{build.arch}}" == "armv7" ] && \
-        openssl_target="linux-generic32"
-
-      ./Configure \
-        "${openssl_target:-}" \
-        -static \
-        --openssldir=/etc/ssl
-
-      make -s -j "$(nproc)"
-      make -s -j "$(nproc)" install_sw
-
-  - runs: |
-      # Merge jitterentropy objects into libcrypto.a so consumers
-      # don't need to explicitly link -ljitterentropy
-      tmpdir=$(mktemp -d)
-      cd "$tmpdir"
-      ar x /usr/lib/libjitterentropy.a
-      ar rcs "$OLDPWD/libcrypto.a" *.o
-      cd "$OLDPWD"
-      rm -rf "$tmpdir"
-
-  - runs: |
+  - name: Repack Wolfi OpenSSL development files
+    runs: |
       mkdir -p "${{targets.destdir}}/usr/lib"
-      cp -af libssl.a    "${{targets.destdir}}/usr/lib"
-      cp -af libcrypto.a "${{targets.destdir}}/usr/lib"
+      cp -af /usr/lib/libssl.a    "${{targets.destdir}}/usr/lib"
+      cp -af /usr/lib/libcrypto.a "${{targets.destdir}}/usr/lib"
 
       mkdir -p "${{targets.destdir}}/usr/include/openssl"
-      cp -af include/openssl/* "${{targets.destdir}}/usr/include/openssl/"
+      cp -af /usr/include/openssl/* "${{targets.destdir}}/usr/include/openssl/"
 
       mkdir -p "${{targets.destdir}}/usr/lib/pkgconfig"
-      cp -af exporters/*.pc "${{targets.destdir}}/usr/lib/pkgconfig/"
+      cp -af /usr/lib/pkgconfig/libcrypto.pc \
+             /usr/lib/pkgconfig/libssl.pc \
+             /usr/lib/pkgconfig/openssl.pc \
+             "${{targets.destdir}}/usr/lib/pkgconfig/"
 
       mkdir -p "${{targets.destdir}}/usr/lib/cmake/OpenSSL"
-      cp -af exporters/*.cmake "${{targets.destdir}}/usr/lib/cmake/OpenSSL/"
+      cp -af /usr/lib/cmake/OpenSSL/* "${{targets.destdir}}/usr/lib/cmake/OpenSSL/"
+
+  - runs: |
+      # Keep this package self-contained for consumers that link directly
+      # against /usr/lib/libcrypto.a without adding -ljitterentropy.
+      tmpdir="$(mktemp -d)"
+      cd "$tmpdir"
+      ar x /usr/lib/libjitterentropy.a
+      ar rcs "${{targets.destdir}}/usr/lib/libcrypto.a" *.o
+      cd /
+      rm -rf "$tmpdir"
+
+      # libjitterentropy.a is merged above and is intentionally not shipped.
+      sed -i 's/ -l:libjitterentropy\.a//g' \
+        "${{targets.destdir}}/usr/lib/pkgconfig/libcrypto.pc" \
+        "${{targets.destdir}}/usr/lib/cmake/OpenSSL/OpenSSLConfig.cmake"
 
   - uses: strip
 
@@ -84,6 +69,7 @@ test:
       keyring:
         - *wolfi-keyring
       packages:
+        - binutils
         - busybox
         - pkgconf
         - ${{package.name}}=${{package.full-version}}
@@ -100,3 +86,6 @@ test:
         test -f /usr/lib/pkgconfig/libssl.pc || test -f /usr/lib/pkgconfig/openssl.pc
         test -f /usr/lib/cmake/OpenSSL/OpenSSLConfig.cmake
         pkgconf --exists libcrypto libssl openssl
+        ! pkgconf --static --libs libcrypto | grep -q jitterentropy
+        ! grep -q jitterentropy /usr/lib/cmake/OpenSSL/OpenSSLConfig.cmake
+        nm -A /usr/lib/libcrypto.a | grep ' T jent_entropy_init_ex' >/dev/null

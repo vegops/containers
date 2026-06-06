@@ -20,39 +20,41 @@ accounts:
   run-as: "65532"
 
 entrypoint:
-  command: /usr/bin/prometheus
+  command: /usr/bin/entrypoint
 
-cmd: >-
-  --config.file=/etc/prometheus/prometheus.yml
-  --storage.tsdb.path=/prometheus
-  --web.console.libraries=/usr/share/prometheus/console_libraries
-  --web.console.templates=/usr/share/prometheus/consoles
+work-dir: /
 
-environment:
-  PATH: /usr/bin:/bin
+volumes:
+  - /prometheus/etc
+  - /prometheus/var
 
 paths:
-  - path: /etc/prometheus
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
-  - path: /etc/prometheus/rules
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o755
   - path: /prometheus
     type: directory
     uid: 65532
     gid: 65532
-    permissions: 0o755
+    permissions: 0o700
+  - path: /prometheus/etc
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /prometheus/etc/rules
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /prometheus/var
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
 
 annotations:
   org.opencontainers.image.title: "prometheus-minimal"
-  org.opencontainers.image.description: "Hardened Prometheus monitoring server built from source via melange with daily CVE patches"
+  org.opencontainers.image.description: "Hardened Minimal Prometheus monitoring server image built on Wolfi with daily CVE patches"
   org.opencontainers.image.url: "https://github.com/vegops/containers"
-  org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/prometheus"
+  org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/prometheus-minimal"
   org.opencontainers.image.licenses: "Apache-2.0"
 
 archs:

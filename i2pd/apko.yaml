@@ -23,35 +23,41 @@ accounts:
       gid: 65532
   run-as: "65532"
 
+work-dir: /
+
 entrypoint:
-  command: /usr/bin/i2pd
+  command: /usr/bin/entrypoint
 
 cmd: >-
-  --service
-  --datadir=/var/lib/i2pd
-  --certsdir=/usr/share/i2pd/certificates
-  --conf=/etc/i2pd/i2pd.conf
-  --tunconf=/etc/i2pd/tunnels.conf
   --sam.enabled=true
   --sam.address=0.0.0.0
   --sam.port=7656
   --upnp.enabled=false
 
+volumes:
+  - /i2pd/etc
+  - /i2pd/var
+
 paths:
-  - path: /var/lib/i2pd
+  - path: /i2pd
     type: directory
     uid: 65532
     gid: 65532
     permissions: 0o700
-  - path: /var/log/i2pd
+  - path: /i2pd/etc
     type: directory
     uid: 65532
     gid: 65532
-    permissions: 0o755
+    permissions: 0o700
+  - path: /i2pd/var
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
 
 annotations:
   org.opencontainers.image.title: "i2pd"
-  org.opencontainers.image.description: "Hardened i2pd builder image built on Wolfi with daily CVE patches"
+  org.opencontainers.image.description: "Hardened i2pd image built on Wolfi with daily CVE patches"
   org.opencontainers.image.url: "https://github.com/vegops/containers"
   org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/i2pd"
   org.opencontainers.image.licenses: "BSD-3-Clause"

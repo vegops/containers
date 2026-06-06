@@ -1,7 +1,7 @@
 package:
   name: rocksdb-10
   version: 10.10.1 # renovate: datasource=github-tags depName=facebook/rocksdb
-  epoch: 1
+  epoch: 2
   description: RocksDB static library
   copyright:
     - license: Apache-2.0
@@ -38,6 +38,7 @@ pipeline:
       sed 's/install -C/install -c/g' Makefile > _
       mv -f _ Makefile
 
+  - runs: |
       PORTABLE=1 \
       DISABLE_JEMALLOC=1 \
       DEBUG_LEVEL=0 \
@@ -48,6 +49,7 @@ pipeline:
       PREFIX=/usr \
       make install-static
 
+  - runs: |
       strip --strip-unneeded "${{targets.destdir}}/usr/lib/librocksdb.a"
 
 update:
@@ -55,6 +57,7 @@ update:
   github:
     identifier: facebook/rocksdb
     use-tag: true
+    tag-filter-prefix: v10.
     strip-prefix: v
 
 test:

@@ -1,6 +1,6 @@
 package:
   name: rocksdb-11
-  version: 11.0.4 # renovate: datasource=github-tags depName=facebook/rocksdb
+  version: 11.1.1 # renovate: datasource=github-tags depName=facebook/rocksdb
   epoch: 0
   description: RocksDB static library
   copyright:
@@ -38,16 +38,19 @@ pipeline:
       sed 's/install -C/install -c/g' Makefile > _
       mv -f _ Makefile
 
+  - runs: |
       PORTABLE=1 \
       DISABLE_JEMALLOC=1 \
       DEBUG_LEVEL=0 \
       USE_RTTI=1 \
+      EXTRA_CXXFLAGS="-Wno-error=maybe-uninitialized" \
       make static_lib -j$(nproc)
 
       DESTDIR="${{targets.destdir}}" \
       PREFIX=/usr \
       make install-static
 
+  - runs: |
       strip --strip-unneeded "${{targets.destdir}}/usr/lib/librocksdb.a"
 
 update:

@@ -1,7 +1,7 @@
 package:
   name: electrs
   version: 0.11.1 # renovate: datasource=github-tags depName=romanz/electrs
-  epoch: 1
+  epoch: 2
   description: An efficient re-implementation of Electrum Server in Rust
   copyright:
     - license: MIT
@@ -21,13 +21,18 @@ environment:
       - openssl-static
       - pkgconf
       - rocksdb-10
-      - rust
       - snappy-dev
       - snappy-static
       - zlib-dev
       - zlib-static
       - zstd-dev
       - zstd-static
+  environment:
+    ROCKSDB_INCLUDE_DIR: /usr/include
+    ROCKSDB_LIB_DIR: /usr/lib
+    ROCKSDB_STATIC: "1"
+    SNAPPY_LIB_DIR: /usr/lib
+    SNAPPY_STATIC: "1"
 
 pipeline:
   - uses: git-checkout
@@ -35,26 +40,24 @@ pipeline:
       repository: https://github.com/romanz/electrs
       tag: v${{package.version}}
 
-  - name: Build electrs
-    runs: |
-      export CARGO_HOME="${PWD}/.cargo"
-      export CARGO_TARGET_DIR="${PWD}/target"
-      export ROCKSDB_INCLUDE_DIR=/usr/include
-      export ROCKSDB_LIB_DIR=/usr/lib
-      export ROCKSDB_STATIC=1
-      export SNAPPY_LIB_DIR=/usr/lib
-      export SNAPPY_STATIC=1
-      export RUSTFLAGS="-C link-arg=-Wl,-Bstatic -C link-arg=-lz -C link-arg=-lsnappy -C link-arg=-Wl,-Bdynamic"
-
-      cargo build \
-        --bin electrs \
-        --features metrics_process \
+  - uses: cargo/build
+    with:
+      output: electrs
+      opts: |
         --release \
         --locked \
-        --jobs "$(nproc)"
+        --bin electrs \
+        --features metrics_process
+      rustflags: >-
+        -C link-arg=-Wl,-Bstatic
+        -C link-arg=-lz
+        -C link-arg=-lsnappy
+        -C link-arg=-Wl,-Bdynamic
 
   - runs: |
-      install -Dm755 target/release/electrs "${{targets.destdir}}/usr/bin/electrs"
+      install -Dm644 doc/config_example.toml "${{targets.destdir}}/usr/share/electrs/config.example.toml"
+
+  - uses: dotnet/entrypoint
 
   - uses: strip
 

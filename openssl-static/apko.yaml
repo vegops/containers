@@ -29,4 +29,3 @@ archs:
 
 layering:
   strategy: origin
-#  - armv7

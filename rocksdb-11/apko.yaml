@@ -18,7 +18,7 @@ accounts:
 
 annotations:
   org.opencontainers.image.title: "rocksdb"
-  org.opencontainers.image.description: "Hardened rocksdb builder image built on Wolfi with daily CVE patches"
+  org.opencontainers.image.description: "Hardened rocksdb image built on Wolfi with daily CVE patches"
   org.opencontainers.image.url: "https://github.com/vegops/containers"
   org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/rocksdb-11"
   org.opencontainers.image.licenses: "Apache-2.0"

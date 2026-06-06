@@ -1,7 +1,7 @@
 package:
   name: lidarr
   version: 3.1.0.4875 # renovate: datasource=github-releases depName=Lidarr/Lidarr
-  epoch: 0
+  epoch: 1
   description: Looks and smells like Sonarr but made for music
   copyright:
     - license: GPL-3.0
@@ -64,6 +64,9 @@ pipeline:
   - runs: |
       chmod -R 0755 "${{targets.destdir}}"/opt/lidarr/*
 
+      mkdir -p "${{targets.destdir}}/usr/bin"
+      ln -sf /opt/lidarr/Lidarr "${{targets.destdir}}/usr/bin/lidarr"
+
   - uses: strip
 
 update:
@@ -82,7 +85,10 @@ test:
         - *wolfi-keyring
       packages:
         - busybox
+        - ${{package.name}}=${{package.full-version}}
   pipeline:
-    - name: Mock test
+    - name: Basic Lidarr package test
       runs: |
-        true
+        test -x /opt/lidarr/Lidarr
+        test -L /usr/bin/lidarr
+        test -d /opt/lidarr/UI

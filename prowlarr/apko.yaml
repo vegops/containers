@@ -33,21 +33,27 @@ accounts:
   run-as: "65532"
 
 entrypoint:
-  command: /opt/prowlarr/Prowlarr
-
-cmd: -nobrowser -data=/prowlarr/etc
+  command: >-
+    /usr/bin/prowlarr
+      -nobrowser
+      -data=/prowlarr/data
 
 work-dir: /
 
 volumes:
-  - /prowlarr/etc
+  - /prowlarr/data
 
 paths:
-  - path: /prowlarr/etc
+  - path: /prowlarr
     type: directory
     uid: 65532
     gid: 65532
-    permissions: 0o755
+    permissions: 0o700
+  - path: /prowlarr/data
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
   - path: /tmp
     type: directory
     uid: 65532

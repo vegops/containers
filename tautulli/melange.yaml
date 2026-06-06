@@ -1,7 +1,7 @@
 package:
   name: tautulli
   version: 2.17.1
-  epoch: 1
+  epoch: 2
   description: Monitoring, analytics, and notifications for Plex Media Server
   copyright:
     - license: GPL-3.0-or-later
@@ -20,37 +20,23 @@ environment:
       - python-3.14
 
 pipeline:
-  - uses: git-checkout
+  - runs: |
+      mkdir -p "${{targets.destdir}}/opt/tautulli"
+
+  - uses: fetch
     with:
-      repository: https://github.com/Tautulli/Tautulli
-      tag: v${{package.version}}
-
-  - runs: |
-      mkdir -p \
-        "${{targets.destdir}}/config" \
-        "${{targets.destdir}}/tautulli" \
-        "${{targets.destdir}}/tautulli/etc" \
-        "${{targets.destdir}}/tautulli/var" \
-        "${{targets.destdir}}/opt/tautulli"
-
-  - runs: |
-      cp -a \
-        data \
-        lib \
-        plexpy \
-        PlexPy.py \
-        Tautulli.py \
-        "${{targets.destdir}}/opt/tautulli/"
+      strip-components: "1"
+      directory: "${{targets.destdir}}/opt/tautulli"
+      expected-none: "true"
+      uri: https://github.com/Tautulli/Tautulli/archive/refs/tags/v${{package.version}}.tar.gz
+      delete: "true"
 
   - runs: |
       printf '%s\n' master > "${{targets.destdir}}/opt/tautulli/branch.txt"
-      git rev-parse HEAD > "${{targets.destdir}}/opt/tautulli/version.txt"
+      printf '%s\n' "v${{package.version}}" > "${{targets.destdir}}/opt/tautulli/version.txt"
 
-  - runs: |
-      cp -a rootfs/. "${{targets.destdir}}/"
-
-  - runs: |
-      : > "${{targets.destdir}}/config/DOCKER"
+  - uses: vegops/rootfs
+  # - uses: vegops/prune
 
 update:
   enabled: true
@@ -73,8 +59,4 @@ test:
   pipeline:
     - name: Basic Tautulli package test
       runs: |
-        test -f /opt/tautulli/Tautulli.py
-        test -d /opt/tautulli/lib
-        test -f /opt/tautulli/version.txt
-        test -f /config/DOCKER
-        python3 /opt/tautulli/Tautulli.py --help >/dev/null
+        python /opt/tautulli/Tautulli.py --help >/dev/null

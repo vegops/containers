@@ -1,0 +1,352 @@
+name: Prune non-runtime artifacts from the package
+
+needs:
+  packages:
+    - busybox
+
+inputs:
+  paths:
+    description: |
+      Space-separated package paths to scan, relative to ${{targets.destdir}}.
+      Leading slashes are accepted. Defaults to the whole package root.
+    default: /
+
+  remove-tests:
+    description: Remove common test directories, fixtures, and test caches.
+    default: "true"
+
+  remove-caches:
+    description: Remove common language and package-manager caches.
+    default: "true"
+
+  remove-language-artifacts:
+    description: Remove safe-to-drop Node.js, Go, and Rust build/dev artifacts.
+    default: "true"
+
+  remove-node-package-extras:
+    description: Remove large Node.js package assets commonly unused at runtime.
+    default: "true"
+
+  remove-docs:
+    description: Remove documentation directories that are not needed at runtime.
+    default: "true"
+
+  remove-devel:
+    description: Remove headers, pkg-config files, CMake package files, and aclocal data.
+    default: "true"
+
+  remove-static-libs:
+    description: Remove static and libtool archives.
+    default: "true"
+
+  remove-foreign-binaries:
+    description: Remove non-Linux executable/library formats.
+    default: "true"
+
+  remove-musl-binaries:
+    description: Remove musl-specific native artifacts from glibc-based Wolfi packages.
+    default: "true"
+
+  remove-source-maps:
+    description: Remove JavaScript source maps.
+    default: "true"
+
+  remove-vcs:
+    description: Remove VCS and repository metadata.
+    default: "true"
+
+  remove-unsupported-architectures:
+    description: Remove architecture/RID directories not matching ${{build.arch}}.
+    default: "true"
+
+  remove-empty-directories:
+    description: Remove empty directories left after pruning.
+    default: "false"
+
+pipeline:
+  - runs: |
+      set -eu
+
+      destdir="${{targets.destdir}}"
+      roots="${{inputs.paths}}"
+
+      enabled() {
+        case "$1" in
+          1|true|yes|on) return 0 ;;
+          *) return 1 ;;
+        esac
+      }
+
+      package_path() {
+        case "$1" in
+          "$destdir"*) printf '%s\n' "$1" ;;
+          /*) printf '%s%s\n' "$destdir" "$1" ;;
+          *) printf '%s/%s\n' "$destdir" "$1" ;;
+        esac
+      }
+
+      is_supported_arch_name() {
+        for arch_name in $supported_arch_names; do
+          if [ "$1" = "$arch_name" ]; then
+            return 0
+          fi
+        done
+        return 1
+      }
+
+      is_arch_name() {
+        case "$1" in
+          x86|x86_64|amd64|x64|arm|arm64|aarch64|linux-x86|linux-x64|linux-arm|linux-arm64|linux-ia32|linux-musl-x64|linux-musl-arm64|linux-x64-gnu|linux-arm64-gnu|linux-x64-musl|linux-arm64-musl|musl-x64|musl-arm64|x86_64-linux-gnu|aarch64-linux-gnu|arm-linux-gnueabihf|win-*|win32-*|windows-*|osx-*|darwin-*|freebsd-*|netbsd-*|openbsd-*|android-*|browser-wasm|wasm|wasm32|riscv64|s390x|ppc64le)
+            return 0
+            ;;
+          *)
+            return 1
+            ;;
+        esac
+      }
+
+      case "${{build.arch}}" in
+        aarch64)
+          supported_arch_names="aarch64 arm64 linux-arm64 linux-musl-arm64 linuxmusl-arm64 musl-arm64 aarch64-linux-gnu"
+          unsupported_platform_patterns="*linux-x64* *linuxmusl-x64* *linux-amd64* *linux-ia32* *linux-x86* *x86_64* *amd64*"
+          foreign_platform_patterns="darwin-* osx-* win-* win32-* windows-* freebsd-* openbsd-* netbsd-* android-* wasm wasm32 browser-wasm riscv64 s390x ppc64le"
+          ;;
+        x86_64)
+          supported_arch_names="x86_64 amd64 x64 linux-x64 linux-musl-x64 linuxmusl-x64 musl-x64 x86_64-linux-gnu"
+          unsupported_platform_patterns="*linux-arm64* *linuxmusl-arm64* *linux-aarch64* *linux-arm-* *aarch64* *arm64*"
+          foreign_platform_patterns="darwin-* osx-* win-* win32-* windows-* freebsd-* openbsd-* netbsd-* android-* wasm wasm32 browser-wasm riscv64 s390x ppc64le"
+          ;;
+        *)
+          echo "unsupported architecture: ${{build.arch}}" >&2
+          exit 1
+          ;;
+      esac
+
+      for package_root in $roots; do
+        root="$(package_path "$package_root")"
+        if [ ! -e "$root" ]; then
+          continue
+        fi
+
+        if enabled "${{inputs.remove-tests}}"; then
+          find "$root" -depth -type d \( \
+            -name test -o \
+            -name tests -o \
+            -name testing -o \
+            -name __tests__ -o \
+            -name testdata -o \
+            -name idle_test -o \
+            -name fixtures -o \
+            -name fixture -o \
+            -name coverage -o \
+            -name .nyc_output -o \
+            -name cypress -o \
+            -name playwright-report -o \
+            -name test-results -o \
+            -name examples -o \
+            -name example -o \
+            -name bench -o \
+            -name benches -o \
+            -name benchmark -o \
+            -name benchmarks -o \
+            -name .pytest_cache \
+          \) -exec rm -rf '{}' +
+
+          find "$root" -type f \( \
+            -name '*_test.go' -o \
+            -name '*_test.rs' -o \
+            -name '*.test.js' -o \
+            -name '*.spec.js' -o \
+            -name '*.test.mjs' -o \
+            -name '*.spec.mjs' -o \
+            -name '*.test.cjs' -o \
+            -name '*.spec.cjs' -o \
+            -name '*.test.ts' -o \
+            -name '*.spec.ts' -o \
+            -name '*.test.tsx' -o \
+            -name '*.spec.tsx' -o \
+            -name '.coverage' \
+          \) -delete
+        fi
+
+        if enabled "${{inputs.remove-caches}}"; then
+          find "$root" -depth -type d \( \
+            -name __pycache__ -o \
+            -name .cache -o \
+            -name .npm -o \
+            -name _cacache -o \
+            -name .yarn-cache -o \
+            -name .pnpm-store -o \
+            -name .node-gyp -o \
+            -name .cargo -o \
+            -name target -o \
+            -name .gradle -o \
+            -name .mypy_cache -o \
+            -name .ruff_cache \
+          \) -exec rm -rf '{}' +
+
+          find "$root" -type f \( \
+            -name '*.pyc' -o \
+            -name '*.pyo' \
+          \) -delete
+        fi
+
+        if enabled "${{inputs.remove-language-artifacts}}"; then
+          find "$root" -depth -type d \( \
+            -name .turbo -o \
+            -name .parcel-cache -o \
+            -name .rollup.cache -o \
+            -name .vite -o \
+            -name .tsbuildinfo -o \
+            -name node-gyp -o \
+            -name gyp -o \
+            -name obj.target -o \
+            -name go-build -o \
+            -name incremental \
+          \) -exec rm -rf '{}' +
+
+          find "$root" -depth -type d -path '*/pkg/mod/cache' -exec rm -rf '{}' +
+
+          find "$root" -type f \( \
+            -name '*.d.ts' -o \
+            -name '*.d.ts.map' -o \
+            -name '*.tsbuildinfo' -o \
+            -name 'tsconfig.json' -o \
+            -name 'tsconfig.*.json' -o \
+            -name 'jsconfig.json' -o \
+            -name '.eslintrc' -o \
+            -name '.eslintrc.*' -o \
+            -name 'eslint.config.*' -o \
+            -name '.prettierrc' -o \
+            -name '.prettierrc.*' -o \
+            -name 'prettier.config.*' -o \
+            -name 'jest.config.*' -o \
+            -name 'vitest.config.*' -o \
+            -name 'karma.conf.*' -o \
+            -name 'rollup.config.*' -o \
+            -name 'webpack.config.*' -o \
+            -name 'vite.config.*' -o \
+            -name '.npmignore' -o \
+            -name '.yarnrc' -o \
+            -name '.yarnrc.yml' -o \
+            -name 'yarn-error.log' -o \
+            -name 'npm-debug.log' -o \
+            -name 'pnpm-debug.log' -o \
+            -name 'go.mod' -o \
+            -name 'go.sum' -o \
+            -name 'Cargo.lock' -o \
+            -name 'Cargo.toml' -o \
+            -name '*.rlib' -o \
+            -name '*.rmeta' \
+          \) -delete
+        fi
+
+        if enabled "${{inputs.remove-node-package-extras}}"; then
+          find "$root" -depth -type d \( \
+            -path '*/node_modules/.pnpm/*/node_modules/ace-builds/src' -o \
+            -path '*/node_modules/.pnpm/*/node_modules/ace-builds/src-min' -o \
+            -path '*/node_modules/.pnpm/*/node_modules/ace-builds/src-min-noconflict' -o \
+            -path '*/node_modules/.pnpm/*/node_modules/ace-builds/src-noconflict' -o \
+            -path '*/node_modules/.pnpm/*/node_modules/country-flag-icons/react' -o \
+            -path '*/node_modules/.pnpm/*/node_modules/country-flag-icons/string' -o \
+            -path '*/node_modules/.pnpm/*/node_modules/country-flag-icons/1x1' -o \
+            -path '*/node_modules/.pnpm/*/node_modules/@heroicons/react/16' \
+          \) -exec rm -rf '{}' +
+        fi
+
+        if enabled "${{inputs.remove-docs}}"; then
+          rm -rf \
+            "$root/usr/share/doc" \
+            "$root/usr/share/gtk-doc" \
+            "$root/usr/share/info" \
+            "$root/usr/share/man"
+
+          find "$root" -type f -path '*/site-packages/README.txt' -delete
+        fi
+
+        if enabled "${{inputs.remove-devel}}"; then
+          rm -rf \
+            "$root/usr/include" \
+            "$root/usr/lib/cmake" \
+            "$root/usr/lib/pkgconfig" \
+            "$root/usr/share/aclocal" \
+            "$root/usr/share/cmake" \
+            "$root/usr/share/pkgconfig"
+
+          find "$root" -type f \( \
+            -name '*.h' -o \
+            -name '*.hh' -o \
+            -name '*.hpp' -o \
+            -name '*.cmake' -o \
+            -name '*.pc' \
+          \) -delete
+        fi
+
+        if enabled "${{inputs.remove-static-libs}}"; then
+          find "$root" -type f \( \
+            -name '*.a' -o \
+            -name '*.la' \
+          \) -delete
+        fi
+
+        if enabled "${{inputs.remove-foreign-binaries}}"; then
+          find "$root" -type f \( \
+            -name '*.dll' -o \
+            -name '*.exe' -o \
+            -name '*.dylib' -o \
+            -name '*.pdb' -o \
+            -name '*.lib' \
+          \) -delete
+        fi
+
+        if enabled "${{inputs.remove-musl-binaries}}"; then
+          find "$root" -depth -type d -name '*musl*' -exec rm -rf '{}' +
+          find "$root" -type l -name '*musl*' -delete
+          find "$root" -type f \( \
+            -name '*.musl.node' -o \
+            -name '*-musl.node' -o \
+            \( -path '*musl*' -a \( -name '*.node' -o -name '*.so' -o -name '*.so.*' \) \) \
+          \) -delete
+        fi
+
+        if enabled "${{inputs.remove-source-maps}}"; then
+          find "$root" -type f -name '*.map' -delete
+        fi
+
+        if enabled "${{inputs.remove-vcs}}"; then
+          find "$root" -depth -type d \( \
+            -name .git -o \
+            -name .github -o \
+            -name .gitlab \
+          \) -exec rm -rf '{}' +
+
+          find "$root" -type f \( \
+            -name .gitignore -o \
+            -name .gitattributes -o \
+            -name .gitmodules \
+          \) -delete
+        fi
+
+        if enabled "${{inputs.remove-unsupported-architectures}}"; then
+          find "$root" -depth -type d | while IFS= read -r dir; do
+            arch_name="${dir##*/}"
+            if is_arch_name "$arch_name" && ! is_supported_arch_name "$arch_name"; then
+              rm -rf "$dir"
+              continue
+            fi
+
+            for platform_pattern in $unsupported_platform_patterns $foreign_platform_patterns; do
+              case "$arch_name" in
+                $platform_pattern)
+                  rm -rf "$dir"
+                  break
+                  ;;
+              esac
+            done
+          done
+        fi
+
+        if enabled "${{inputs.remove-empty-directories}}"; then
+          find "$root" -depth -type d -empty -delete
+        fi
+      done

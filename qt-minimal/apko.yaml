@@ -24,12 +24,14 @@ entrypoint:
 
 cmd: --version
 
+work-dir: /
+
 environment:
   LANG: C.UTF-8
 
 annotations:
   org.opencontainers.image.title: "qt-minimal"
-  org.opencontainers.image.description: "Hardened qt-minimal builder image built on Wolfi with daily CVE patches"
+  org.opencontainers.image.description: "Hardened qt-minimal image built on Wolfi with daily CVE patches"
   org.opencontainers.image.url: "https://github.com/vegops/containers"
   org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/qt-minimal"
   org.opencontainers.image.licenses: "LGPL-3.0"

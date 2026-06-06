@@ -20,12 +20,26 @@ accounts:
   run-as: "65532"
 
 entrypoint:
-  command: /usr/bin/electrs
+  command: /usr/bin/entrypoint
 
-work-dir: /data
+work-dir: /
+
+volumes:
+  - /electrs/etc
+  - /electrs/var
 
 paths:
-  - path: /data
+  - path: /electrs
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /electrs/etc
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o700
+  - path: /electrs/var
     type: directory
     uid: 65532
     gid: 65532

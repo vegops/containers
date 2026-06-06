@@ -1,7 +1,7 @@
 package:
   name: i2pd
   version: 2.60.0 # renovate: datasource=github-tags depName=PurpleI2P/i2pd
-  epoch: 0
+  epoch: 1
   description: I2P daemon
   copyright:
     - license: BSD-3-Clause
@@ -16,7 +16,6 @@ environment:
       - busybox
       - build-base
       - boost-dev
-      - git
       - miniupnpc-dev
       - openssl-dev
       - zlib-dev
@@ -29,19 +28,19 @@ pipeline:
 
   - runs: |
       make USE_UPNP=yes -j$(nproc)
+      install -Dm755 i2pd "${{targets.destdir}}/usr/bin/i2pd"
+      install -Dm644 contrib/docker/i2pd-docker.conf "${{targets.destdir}}/usr/share/i2pd/i2pd.conf"
 
-      mkdir -p "${{targets.destdir}}/usr/bin"
-      cp i2pd "${{targets.destdir}}/usr/bin/i2pd"
+      mkdir -p "${{targets.destdir}}/i2pd"
+      cp -r contrib/certificates "${{targets.destdir}}/i2pd/certificates"
 
-      mkdir -p "${{targets.destdir}}/usr/share/i2pd"
-      cp -r contrib/certificates "${{targets.destdir}}/usr/share/i2pd/certificates"
+      # Patch default config for container use: log to stdout, errors only
+      sed -e 's/^log = file/log = stdout/' \
+          -e 's/^loglevel = none/loglevel = error/' \
+          "${{targets.destdir}}/usr/share/i2pd/i2pd.conf" > _
+      mv -f _ "${{targets.destdir}}/usr/share/i2pd/i2pd.conf"
 
-      mkdir -p "${{targets.destdir}}/etc/i2pd"
-      cp contrib/docker/i2pd-docker.conf "${{targets.destdir}}/etc/i2pd/i2pd.conf"
-
-      # Patch config for container use
-      sed -i 's/^log = file/log = stdout/' "${{targets.destdir}}/etc/i2pd/i2pd.conf"
-      sed -i 's/^loglevel = none/loglevel = error/' "${{targets.destdir}}/etc/i2pd/i2pd.conf"
+  - uses: dotnet/entrypoint
 
   - uses: strip
 
@@ -67,5 +66,5 @@ test:
   pipeline:
     - name: Basic i2pd command test
       runs: |
-        i2pd --help >/dev/null 2>&1 || \
-        i2pd --version >/dev/null 2>&1
+        i2pd --version
+        entrypoint --version

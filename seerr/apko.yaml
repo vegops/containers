@@ -6,7 +6,7 @@ contents:
   packages:
     - wolfi-baselayout
     - ca-certificates-bundle
-    - nodejs-22-minimal
+    - nodejs-22
     - tzdata
     - seerr
 
@@ -28,11 +28,13 @@ cmd: /opt/seerr/dist/index.js
 work-dir: /opt/seerr
 
 environment:
-  CONFIG_DIRECTORY: /seerr/etc
+  CONFIG_DIRECTORY: /seerr/config
+  LOG_LEVEL: info
+  NEXT_TELEMETRY_DISABLED: "1"
   NODE_ENV: production
 
 volumes:
-  - /seerr
+  - /seerr/config
 
 paths:
   - path: /seerr
@@ -40,32 +42,32 @@ paths:
     uid: 65532
     gid: 65532
     permissions: 0o700
-  - path: /seerr/etc
+  - path: /seerr/config
     type: directory
     uid: 65532
     gid: 65532
     permissions: 0o700
-  - path: /seerr/var
+  - path: /seerr/config/DOCKER
+    type: empty-file
+    uid: 65532
+    gid: 65532
+    permissions: 0o600
+  - path: /seerr/config/cache
     type: directory
     uid: 65532
     gid: 65532
     permissions: 0o700
-  - path: /seerr/var/cache
+  - path: /seerr/config/cache/images
     type: directory
     uid: 65532
     gid: 65532
     permissions: 0o700
-  - path: /seerr/var/cache/images
+  - path: /seerr/config/db
     type: directory
     uid: 65532
     gid: 65532
     permissions: 0o700
-  - path: /seerr/var/db
-    type: directory
-    uid: 65532
-    gid: 65532
-    permissions: 0o700
-  - path: /seerr/var/log
+  - path: /seerr/config/logs
     type: directory
     uid: 65532
     gid: 65532

@@ -1,7 +1,7 @@
 package:
   name: fulcrum
   version: 2.1.1
-  epoch: 1
+  epoch: 2
   description: Fulcrum SPV server
   copyright:
     - license: GPL-3.0
@@ -20,7 +20,7 @@ environment:
       - openssl-static
       - pkgconf
       - qt-minimal
-      - rocksdb-10
+      - rocksdb-11
       - snappy-dev
       - zeromq-dev
       - zlib-dev
@@ -41,11 +41,17 @@ pipeline:
         "LIBS+=-L/usr/lib -lrocksdb -lz -ljemalloc -lzmq -lzstd -llz4 -lsnappy" \
         "INCLUDEPATH+=/usr/include"
 
+  - runs: |
       make -j "$(nproc)"
 
+  - runs: |
       mkdir -p "${{targets.destdir}}/usr/bin"
+      mkdir -p "${{targets.destdir}}/usr/share/fulcrum"
       cp Fulcrum "${{targets.destdir}}/usr/bin/Fulcrum"
       cp FulcrumAdmin "${{targets.destdir}}/usr/bin/FulcrumAdmin"
+      cp -af doc/fulcrum-example-config.conf "${{targets.destdir}}/usr/share/fulcrum/fulcrum.conf.example"
+
+  - uses: dotnet/entrypoint
 
   - uses: strip
 
@@ -74,3 +80,5 @@ test:
       runs: |
         Fulcrum --help >/dev/null 2>&1
         FulcrumAdmin --help >/dev/null 2>&1
+        test -x /usr/bin/entrypoint
+        test -f /usr/share/fulcrum/fulcrum.conf.example

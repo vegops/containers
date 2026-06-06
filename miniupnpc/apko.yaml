@@ -6,6 +6,7 @@ contents:
   packages:
     - wolfi-baselayout
     - ca-certificates-bundle
+    - tzdata
     - miniupnpc
 
 accounts:
@@ -18,6 +19,8 @@ accounts:
       gid: 65532
   run-as: "65532"
 
+work-dir: /
+
 entrypoint:
   command: /usr/bin/upnpc
 
@@ -25,7 +28,7 @@ cmd: --version
 
 annotations:
   org.opencontainers.image.title: "miniupnpc"
-  org.opencontainers.image.description: "Hardened miniupnpc builder image built on Wolfi with daily CVE patches"
+  org.opencontainers.image.description: "Hardened miniupnpc image built on Wolfi with daily CVE patches"
   org.opencontainers.image.url: "https://github.com/vegops/containers"
   org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/miniupnpc"
   org.opencontainers.image.licenses: "BSD-3-Clause"

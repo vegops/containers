@@ -1,7 +1,7 @@
 package:
   name: seerr
   version: 3.3.0 # renovate: datasource=github-releases depName=seerr-team/seerr
-  epoch: 2
+  epoch: 3
   description: Media request manager for Jellyfin, Plex, Emby, Radarr, and Sonarr
   copyright:
     - license: MIT
@@ -42,38 +42,25 @@ pipeline:
       cp -a package.json pnpm-lock.yaml .npmrc bin package/
 
   - working-directory: package
+    environment:
+      HOME: /home/build/.home
+      CI: "true"
     runs: |
-      export HOME=/home/build/.home
-      CI=true pnpm install --prod --frozen-lockfile
+      pnpm install --prod --frozen-lockfile
 
-  - runs: |
-      export HOME=/home/build/.home
-      CI=true CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile
-      COMMIT_TAG="v${{package.version}}" pnpm build
+  - environment:
+      HOME: /home/build/.home
+      CI: "true"
+      CYPRESS_INSTALL_BINARY: "0"
+      COMMIT_TAG: "v${{package.version}}"
+    runs: |
+      pnpm install --frozen-lockfile
+      pnpm build
 
       rm -rf .next/cache
 
-  - working-directory: package
-    runs: |
-      export HOME=/home/build/.home
-      case "${{build.arch}}" in
-        x86_64)  node_arch="x64" ;;
-        aarch64) node_arch="arm64" ;;
-      esac
-
-      # Prune unnecessary files from node_modules
-      npx --yes @usex/prune-mod@0.0.14 --verbose
-      find node_modules -type d \( -name '*musl*' -o -name 'win64-bin' -o -name 'osx-bin' \) -prune -exec rm -rf {} +
-      find node_modules -type f \( -name '*.dll' -o -name '*.exe' -o -name '*.node' -path '*musl*' \) -delete
-      find node_modules -type d -path '*/prebuilds/*' ! -name "linux-${node_arch}" -prune -exec rm -rf {} +
-
   - runs: |
       mkdir -p "${{targets.destdir}}/opt/seerr"
-      mkdir -p \
-        "${{targets.destdir}}/seerr/etc" \
-        "${{targets.destdir}}/seerr/var/cache/images" \
-        "${{targets.destdir}}/seerr/var/db" \
-        "${{targets.destdir}}/seerr/var/log"
 
       cp -a \
         .next \
@@ -88,12 +75,12 @@ pipeline:
       printf '{"commitTag":"v%s"}\n' "${{package.version}}" \
         > "${{targets.destdir}}/opt/seerr/committag.json"
 
-      ln -sfn /seerr/var/cache "${{targets.destdir}}/seerr/etc/cache"
-      ln -sfn /seerr/var/db "${{targets.destdir}}/seerr/etc/db"
-      ln -sfn /seerr/var/log "${{targets.destdir}}/seerr/etc/logs"
-      : > "${{targets.destdir}}/seerr/etc/DOCKER"
-
       rm -rf /home/build/.home package
+
+  - uses: vegops/prune
+    with:
+      paths: /opt/seerr
+      remove-empty-directories: "true"
 
 update:
   enabled: true
@@ -111,15 +98,11 @@ test:
         - *wolfi-keyring
       packages:
         - busybox
-        - nodejs-22-minimal
+        - nodejs-22
         - ${{package.name}}=${{package.full-version}}
   pipeline:
     - name: Basic Seerr package test
       runs: |
         test -f /opt/seerr/dist/index.js
         test -f /opt/seerr/package.json
-        test -L /seerr/etc/cache
-        test -L /seerr/etc/db
-        test -L /seerr/etc/logs
-        test -f /seerr/etc/DOCKER
-        node -e "require('/opt/seerr/node_modules/sqlite3'); require('/opt/seerr/node_modules/sharp'); const pkg = require('/opt/seerr/package.json'); if (pkg.version !== '${{package.version}}') process.exit(1)"
+        node -e "require('node:inspector'); require('/opt/seerr/node_modules/sqlite3'); require('/opt/seerr/node_modules/sharp'); const pkg = require('/opt/seerr/package.json'); if (pkg.version !== '${{package.version}}') process.exit(1)"

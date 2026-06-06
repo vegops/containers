@@ -91,23 +91,28 @@ accounts:
 entrypoint:
   command: /usr/bin/postgres
 
+work-dir: /
+
 environment:
-  PGDATA: /var/lib/postgresql/data
+  PGDATA: /postgres/var
   LANG: en_US.UTF-8
   PATH: /usr/lib/postgresql18/bin:/usr/bin:/bin
 
+volumes:
+  - /postgres/var
+
 paths:
-  - path: /var/lib/postgresql
+  - path: /postgres
     type: directory
     uid: 70
     gid: 70
     permissions: 0o700
-  - path: /var/lib/postgresql/data
+  - path: /postgres/var
     type: directory
     uid: 70
     gid: 70
     permissions: 0o700
-  - path: /var/run/postgresql
+  - path: /postgres/run
     type: directory
     uid: 70
     gid: 70

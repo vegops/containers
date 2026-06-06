@@ -24,9 +24,11 @@ entrypoint:
 
 cmd: version
 
+work-dir: /
+
 annotations:
   org.opencontainers.image.title: "openssl"
-  org.opencontainers.image.description: "Hardened openssl builder image built on Wolfi with daily CVE patches"
+  org.opencontainers.image.description: "Hardened openssl image built on Wolfi with daily CVE patches"
   org.opencontainers.image.url: "https://github.com/vegops/containers"
   org.opencontainers.image.source: "https://github.com/vegops/containers/tree/main/openssl"
   org.opencontainers.image.licenses: "Apache-2.0"

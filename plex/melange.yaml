@@ -1,7 +1,7 @@
 package:
   name: plex
   version: 1.43.2.10687 # renovate: datasource=custom.plex depName=plex
-  epoch: 0
+  epoch: 1
   description: Plex Media Server
   copyright:
     - license: LicenseRef-Plex-EULA
@@ -13,7 +13,6 @@ package:
       - libssl3
 
 environment:
-  environment:
   contents:
     repositories:
       - &wolfi-repository https://packages.wolfi.dev/os
@@ -51,27 +50,22 @@ pipeline:
       wget -q --show-progress --progress=bar:force -O plex.deb https://downloads.plex.tv/plex-media-server-new/${BUILD_VERSION}/debian/plexmediaserver_${BUILD_VERSION}_${{build.goarch}}.deb
       gpg --verify plex.deb
 
+  - name: Extract Plex package
+    runs: |
       mkdir -p rootfs
       (
         cd rootfs
         ar p ../plex.deb data.tar.xz | tar -xJf -
       )
 
-  - name: Install artifacts
-    runs: |
-      set -eu
+  - uses: vegops/rootfs
 
-      mkdir -p \
-        "${{targets.destdir}}/usr/bin" \
-        "${{targets.destdir}}/usr/lib" \
-        "${{targets.destdir}}/plex/etc/Library/Application Support" \
-        "${{targets.destdir}}/plex/tmp"
-      cp -a rootfs/usr/lib/plexmediaserver "${{targets.destdir}}/usr/lib/"
-
+  - runs: |
       # Create a symlink for easier execution of the Plex Media Server binary
+      mkdir -p "${{targets.destdir}}/usr/bin"
       ln -sf "/usr/lib/plexmediaserver/Plex Media Server" "${{targets.destdir}}/usr/bin/plex"
 
-      install -Dm644 rootfs/usr/lib/plexmediaserver/Resources/LICENSE "${{targets.destdir}}/usr/share/licenses/plex/LICENSE"
+  - uses: dotnet/entrypoint
 
   - uses: strip
 
@@ -93,9 +87,5 @@ test:
   pipeline:
     - name: Basic Plex package test
       runs: |
-        test -x "/usr/lib/plexmediaserver/Plex Media Server"
         test -x /usr/bin/plex
-        test -f /usr/share/licenses/plex/LICENSE
-        test -d /plex/etc
-        test -d "/plex/etc/Library/Application Support"
-        test -d /plex/tmp
+        test -x /usr/bin/entrypoint

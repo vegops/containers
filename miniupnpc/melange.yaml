@@ -1,7 +1,7 @@
 package:
   name: miniupnpc
   version: 2.3.3 # renovate: datasource=github-tags depName=miniupnp/miniupnp
-  epoch: 0
+  epoch: 1
   description: Lightweight UPnP client library and tools
   copyright:
     - license: BSD-3-Clause
@@ -27,10 +27,16 @@ pipeline:
       repository: https://github.com/miniupnp/miniupnp
       tag: miniupnpc_${{vars.upstream-version}}
 
-  - runs: |
-      cd ${{package.name}}
-      make -j"$(nproc)"
-      make DESTDIR="${{targets.destdir}}" INSTALLPREFIX=/usr install
+  - uses: autoconf/make
+    with:
+      dir: ${{package.name}}
+
+  - uses: autoconf/make-install
+    with:
+      dir: ${{package.name}}
+      opts: INSTALLPREFIX=/usr
+
+  - uses: strip
 
 subpackages:
   - name: miniupnpc-dev
@@ -62,7 +68,6 @@ update:
   github:
     identifier: miniupnp/miniupnp
     use-tag: true
-    tag-filter-prefix: miniupnpc_2_3_
     strip-prefix: miniupnpc_
   version-transform:
     - match: ^([0-9]+)_([0-9]+)_([0-9]+)$
@@ -83,5 +88,5 @@ test:
   pipeline:
     - name: Basic test
       runs: |
-        upnpc --version >/dev/null 2>&1 || \
-        upnpc --help >/dev/null 2>&1
+        upnpc --version || \
+        upnpc --help

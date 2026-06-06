@@ -67,7 +67,7 @@ pipeline:
         -o "${{inputs.output-dir}}"
 
       if [ -n "${{inputs.install-path}}" ]; then
-        install -Dm755 "${{inputs.output-dir}}/${{inputs.output-name}}" "${{targets.destdir}}${{inputs.install-path}}"
+        install -Dm755 "${{inputs.output-dir}}/${{inputs.output-name}}" "${{targets.contextdir}}${{inputs.install-path}}"
       fi
 
       if [ -n "${{inputs.cleanup-dir}}" ]; then

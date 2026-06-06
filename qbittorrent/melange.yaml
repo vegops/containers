@@ -1,10 +1,14 @@
 package:
   name: qbittorrent
   version: 5.2.1 # renovate: datasource=github-tags depName=qbittorrent/qBittorrent
-  epoch: 0
+  epoch: 1
   description: qBittorrent BitTorrent client
   copyright:
     - license: GPL-2.0-only
+  dependencies:
+    runtime:
+      - libcrypto3
+      - libssl3
 
 vars:
   vuetorrent-version: 2.34.0 # renovate: datasource=github-releases depName=VueTorrent/VueTorrent
@@ -28,7 +32,6 @@ environment:
       - clang-18
       - cmake
       - curl
-      - dotnet-10-sdk
       - git
       - jq
       - libtorrent
@@ -48,23 +51,14 @@ pipeline:
       repository: https://github.com/qbittorrent/qBittorrent
       tag: release-${{package.version}}
 
-  - name: Download VueTorrent
-    runs: |
-      vuetorrent_json="$(curl -fsSL "https://api.github.com/repos/VueTorrent/VueTorrent/releases/tags/v${{vars.vuetorrent-version}}")"
-      vuetorrent_url="$(printf '%s' "${vuetorrent_json}" | jq -r '.assets[] | select(.name == "vuetorrent.zip") | .browser_download_url')"
-      vuetorrent_digest="$(printf '%s' "${vuetorrent_json}" | jq -r '.assets[] | select(.name == "vuetorrent.zip") | .digest | sub("^sha256:"; "")')"
-
-      curl -fsSL "${vuetorrent_url}" -o vuetorrent.zip
-      echo "${vuetorrent_digest}  vuetorrent.zip" | sha256sum -c -
-
-      unzip -q vuetorrent.zip
-
   - name: Patch qBittorrent sources
     runs: |
       # Allow peer ID and user agent override via environment variables
-      sed -i 's/lt::generate_fingerprint(PEER_ID, QBT_VERSION_MAJOR, QBT_VERSION_MINOR, QBT_VERSION_BUGFIX, QBT_VERSION_BUILD);/getenv("QBITTORRENT_PEER_ID") ? getenv("QBITTORRENT_PEER_ID") : lt::generate_fingerprint(PEER_ID, QBT_VERSION_MAJOR, QBT_VERSION_MINOR, QBT_VERSION_BUGFIX, QBT_VERSION_BUILD);/' src/base/bittorrent/sessionimpl.cpp
-      sed -i 's|const auto USER_AGENT = QStringLiteral("qBittorrent/" QBT_VERSION_2);|const char *envUserAgent = getenv("QBITTORRENT_USER_AGENT"); const auto USER_AGENT = envUserAgent ? QString::fromUtf8(envUserAgent) : QStringLiteral("qBittorrent/" QBT_VERSION_2);|' src/base/bittorrent/sessionimpl.cpp
-      sed -i '1s/^/#include <stdlib.h>\n/' src/base/bittorrent/sessionimpl.cpp
+      sed -e 's/lt::generate_fingerprint(PEER_ID, QBT_VERSION_MAJOR, QBT_VERSION_MINOR, QBT_VERSION_BUGFIX, QBT_VERSION_BUILD);/getenv("QBITTORRENT_PEER_ID") ? getenv("QBITTORRENT_PEER_ID") : lt::generate_fingerprint(PEER_ID, QBT_VERSION_MAJOR, QBT_VERSION_MINOR, QBT_VERSION_BUGFIX, QBT_VERSION_BUILD);/' \
+          -e 's|const auto USER_AGENT = QStringLiteral("qBittorrent/" QBT_VERSION_2);|const char *envUserAgent = getenv("QBITTORRENT_USER_AGENT"); const auto USER_AGENT = envUserAgent ? QString::fromUtf8(envUserAgent) : QStringLiteral("qBittorrent/" QBT_VERSION_2);|' \
+          -e '1s/^/#include <stdlib.h>\n/' \
+          src/base/bittorrent/sessionimpl.cpp > _
+      mv _ src/base/bittorrent/sessionimpl.cpp
 
   - uses: cmake/configure
     with:
@@ -94,19 +88,24 @@ pipeline:
       mv "${{targets.destdir}}/usr/bin/qbittorrent-nox" "${{targets.destdir}}/usr/bin/qbittorrent"
       rm -rf "${{targets.destdir}}/usr/share/man"
 
-  - name: Build entrypoint (Native AOT)
-    runs: |
-      arch="$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/')"
-      dotnet publish entrypoint.cs -c Release -r "linux-${arch}" -o .
-      rm -rf .local
+  - uses: dotnet/entrypoint
 
-  - name: Install artifacts
+  - name: Download VueTorrent
     runs: |
-      install -Dm755 entrypoint "${{targets.destdir}}/usr/bin/entrypoint"
-      install -Dm644 qBittorrent.conf "${{targets.destdir}}/usr/share/qbittorrent/qBittorrent.conf"
-      mkdir -p "${{targets.destdir}}/qbittorrent/themes"
-      cp -a vuetorrent "${{targets.destdir}}/qbittorrent/themes/vuetorrent"
+      vuetorrent_json="$(curl -fsSL "https://api.github.com/repos/VueTorrent/VueTorrent/releases/tags/v${{vars.vuetorrent-version}}")"
+      vuetorrent_url="$(printf '%s' "${vuetorrent_json}" | jq -r '.assets[] | select(.name == "vuetorrent.zip") | .browser_download_url')"
+      vuetorrent_digest="$(printf '%s' "${vuetorrent_json}" | jq -r '.assets[] | select(.name == "vuetorrent.zip") | .digest | sub("^sha256:"; "")')"
 
+      curl -fsSL "${vuetorrent_url}" -o vuetorrent.zip
+      echo "${vuetorrent_digest}  vuetorrent.zip" | sha256sum -c -
+
+      mkdir -p rootfs/qbittorrent/themes
+      unzip -q vuetorrent.zip -d rootfs/qbittorrent/themes
+
+  - uses: vegops/rootfs
+
+  - name: Install symlinks
+    runs: |
       mkdir -p "${{targets.destdir}}/opt/qBittorrent/logs"
       ln -sf /qbittorrent/etc   "${{targets.destdir}}/opt/qBittorrent/config"
       ln -sf /qbittorrent/var   "${{targets.destdir}}/opt/qBittorrent/data"
@@ -120,7 +119,6 @@ update:
   github:
     identifier: qbittorrent/qBittorrent
     use-tag: true
-    tag-filter-prefix: release-5.1.
     strip-prefix: release-
 
 test:
@@ -137,5 +135,7 @@ test:
   pipeline:
     - name: Basic qBittorrent command test
       runs: |
+        test -x /usr/bin/entrypoint
+        entrypoint --version >/dev/null 2>&1
         qbittorrent --version >/dev/null 2>&1 || \
         qbittorrent --help >/dev/null 2>&1

@@ -1,0 +1,131 @@
+package:
+  name: prometheus
+  version: 3.12.0 # renovate: datasource=github-tags depName=prometheus/prometheus
+  epoch: 0
+  description: Prometheus monitoring server with embedded web UI
+  copyright:
+    - license: Apache-2.0
+
+environment:
+  environment:
+    GOTOOLCHAIN: local
+    CGO_ENABLED: "0"
+  contents:
+    repositories:
+      - &wolfi-repository https://packages.wolfi.dev/os
+    keyring:
+      - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - gzip
+      - nodejs
+      - npm
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/prometheus/prometheus
+      tag: v${{package.version}}
+
+  - runs: make assets-compress BUILD_UI=mantine
+
+  - uses: go/build
+    with:
+      packages: ./cmd/prometheus
+      output: prometheus
+      tags: builtinassets
+      strip: "-s -w"
+      ldflags: >-
+        -X github.com/prometheus/common/version.Version=${{package.version}}
+        -X github.com/prometheus/common/version.Branch=HEAD
+        -X github.com/prometheus/common/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        -X github.com/prometheus/common/version.BuildUser=vegops
+
+  - uses: go/build
+    with:
+      packages: ./cmd/promtool
+      output: promtool
+      strip: "-s -w"
+      ldflags: >-
+        -X github.com/prometheus/common/version.Version=${{package.version}}
+
+  - uses: vegops/rootfs
+
+  - uses: dotnet/entrypoint
+
+  - uses: vegops/prune
+
+  - uses: strip
+
+subpackages:
+  - name: prometheus-minimal
+    description: Minimal Prometheus monitoring server built from source
+    pipeline:
+      - uses: go/build
+        with:
+          packages: ./cmd/prometheus
+          output: prometheus
+          strip: "-s -w"
+          ldflags: >-
+            -X github.com/prometheus/common/version.Version=${{package.version}}
+            -X github.com/prometheus/common/version.Branch=HEAD
+            -X github.com/prometheus/common/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            -X github.com/prometheus/common/version.BuildUser=vegops
+
+      - uses: go/build
+        with:
+          packages: ./cmd/promtool
+          output: promtool
+          strip: "-s -w"
+          ldflags: >-
+            -X github.com/prometheus/common/version.Version=${{package.version}}
+
+      - uses: vegops/rootfs
+
+      - uses: dotnet/entrypoint
+
+      - uses: strip
+    test:
+      environment:
+        contents:
+          repositories:
+            - *wolfi-repository
+          keyring:
+            - *wolfi-keyring
+          packages:
+            - apk-tools
+            - busybox
+            - posix-libc-utils
+            - prometheus-minimal=${{package.full-version}}
+      pipeline:
+        - name: Basic command test
+          runs: |
+            prometheus --version >/dev/null 2>&1
+            promtool --version >/dev/null 2>&1
+
+update:
+  enabled: true
+  github:
+    identifier: prometheus/prometheus
+    use-tag: true
+    strip-prefix: "v"
+
+test:
+  environment:
+    contents:
+      repositories:
+        - *wolfi-repository
+      keyring:
+        - *wolfi-keyring
+      packages:
+        - apk-tools
+        - busybox
+        - posix-libc-utils
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - name: Basic command test
+      runs: |
+        prometheus --version >/dev/null 2>&1
+        promtool --version >/dev/null 2>&1

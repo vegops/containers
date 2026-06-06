@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" width="128" height="128" alt="VegOps Containers Logo">
+  <img src=".assets/logo.png" width="128" height="128" alt="VegOps Containers Logo">
 </p>
 
 <h1 align="center">VegOps Containers</h1>
@@ -45,7 +45,7 @@
 | `ghcr.io/vegops/lnd`                | Lightning Network Daemon     | Pre-built binaries, GPG verified   |
 | `ghcr.io/vegops/miniupnpc`          | MiniUPnP CLI/Library         | Compiled from source (make)        |
 | `ghcr.io/vegops/openssl`            | OpenSSL CLI                  | Wolfi package (apko-only)          |
-| `ghcr.io/vegops/openssl-static`     | OpenSSL static library       | Compiled from source (CMake)       |
+| `ghcr.io/vegops/openssl-static`     | OpenSSL static library       | Repacked from Wolfi openssl-dev    |
 | `ghcr.io/vegops/plex`               | Plex Media Server            | Official Debian package            |
 | `ghcr.io/vegops/postgres`           | PostgreSQL database          | Wolfi package (apko-only)          |
 | `ghcr.io/vegops/prometheus-minimal` | Prometheus monitoring        | Compiled from source (Go)          |

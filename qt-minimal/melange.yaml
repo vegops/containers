@@ -1,7 +1,7 @@
 package:
   name: qt-minimal
   version: 6.11.1
-  epoch: 0
+  epoch: 1
   description: Minimal Qt 6
   copyright:
     - license: LGPL-3.0
@@ -15,19 +15,18 @@ environment:
     packages:
       - build-base
       - busybox
-      - cmake
-      - git
       - linux-headers
       - mesa-dev
       - openssl-static
       - perl
-      - samurai
 
 pipeline:
   - uses: git-checkout
     with:
       repository: https://github.com/qt/qtbase
       tag: v${{package.version}}
+
+  - runs: mkdir output
 
   - runs: |
       ./configure \
@@ -48,25 +47,40 @@ pipeline:
         -optimize-size \
         -feature-optimize_full
 
-      cmake --build . --parallel $(nproc)
-      cmake --install .
-      DESTDIR="${{targets.destdir}}" cmake --install .
+  - uses: cmake/build
+    with:
+      opts: --parallel $(nproc)
 
-  - runs: |
-      git clone --depth 1 --branch v${{package.version}} \
-        https://github.com/qt/qttools.git /home/build/qttools
+  - uses: cmake/install
 
-  - runs: |
-      cd /home/build/qttools
-      cmake -Wno-dev -B build -G Ninja \
+  - name: Clean up build artifacts and install files on build environment
+    runs: |
+      cmake --install output
+      find . -mindepth 1 -maxdepth 1 ! -name melange-out -exec rm -rf {} +
+      mkdir output
+
+  - uses: git-checkout
+    with:
+      repository: https://github.com/qt/qttools
+      branch: v${{package.version}}
+      depth: "1"
+
+  - uses: cmake/configure
+    with:
+      opts: |
+        -Wno-dev \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_CXX_STANDARD=17 \
         -DCMAKE_PREFIX_PATH=/usr \
         -DCMAKE_EXE_LINKER_FLAGS="-static" \
         -DBUILD_SHARED_LIBS=OFF
-      cmake --build build --parallel $(nproc)
-      DESTDIR="${{targets.destdir}}" cmake --install build
+
+  - uses: cmake/build
+    with:
+      opts: --parallel $(nproc)
+
+  - uses: cmake/install
 
   - uses: strip
 
@@ -75,7 +89,6 @@ update:
   github:
     identifier: qt/qtbase
     use-tag: true
-    tag-filter-prefix: v6.11.
     strip-prefix: v
 
 test:
