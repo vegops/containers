@@ -322,7 +322,7 @@ for asset in (THEME_BOOTSTRAP_FILE, THEME_TOGGLE_FILE):
     shutil.copy(os.path.join(SCRIPT_DIR, asset), os.path.join(site_dir, asset))
 
 # Copy favicon
-logo = os.path.join(PROJECT_ROOT, "logo.png")
+logo = os.path.join(PROJECT_ROOT, ".assets", "logo.png")
 if os.path.exists(logo):
     shutil.copy(logo, os.path.join(site_dir, "favicon.png"))
 
