@@ -1,7 +1,7 @@
 package:
   name: lnd
   version: 0.20.1_beta # renovate: datasource=github-tags depName=lightningnetwork/lnd
-  epoch: 0
+  epoch: 1
   description: Lightning Network Daemon
   copyright:
     - license: MIT
@@ -15,6 +15,7 @@ var-transforms:
 environment:
   environment:
     GOPATH: /tmp/go
+    CGO_ENABLED: "0"
   contents:
     repositories:
       - &wolfi-repository https://packages.wolfi.dev/os
@@ -45,12 +46,16 @@ pipeline:
       git verify-tag "v${{vars.upstream-version}}"
 
   - runs: |
-      NO_PROXY="*" \
       make release-install
 
+  - runs: |
       mkdir -p "${{targets.destdir}}/usr/bin"
+      mkdir -p "${{targets.destdir}}/usr/share/lnd"
       cp /tmp/go/bin/lncli "${{targets.destdir}}/usr/bin/lncli"
       cp /tmp/go/bin/lnd   "${{targets.destdir}}/usr/bin/lnd"
+      cp sample-lnd.conf "${{targets.destdir}}/usr/share/lnd/lnd.sample.conf"
+
+  - uses: dotnet/entrypoint
 
   - uses: strip
 
@@ -59,7 +64,6 @@ update:
   github:
     identifier: lightningnetwork/lnd
     use-tag: true
-    tag-filter-prefix: v0.20.
     strip-prefix: v
   version-transform:
     - match: "-"
