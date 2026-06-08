@@ -1,8 +1,8 @@
 package:
-  name: prometheus
+  name: prometheus-minimal
   version: 3.12.0 # renovate: datasource=github-tags depName=prometheus/prometheus
-  epoch: 0
-  description: Prometheus monitoring server with embedded web UI
+  epoch: 1
+  description: Minimal Prometheus monitoring server built from source
   copyright:
     - license: Apache-2.0
 
@@ -19,9 +19,6 @@ environment:
       - build-base
       - busybox
       - ca-certificates-bundle
-      - gzip
-      - nodejs
-      - npm
 
 pipeline:
   - uses: git-checkout
@@ -29,13 +26,10 @@ pipeline:
       repository: https://github.com/prometheus/prometheus
       tag: v${{package.version}}
 
-  - runs: make assets-compress BUILD_UI=mantine
-
   - uses: go/build
     with:
       packages: ./cmd/prometheus
       output: prometheus
-      tags: builtinassets
       strip: "-s -w"
       ldflags: >-
         -X github.com/prometheus/common/version.Version=${{package.version}}
@@ -55,55 +49,7 @@ pipeline:
 
   - uses: dotnet/entrypoint
 
-  - uses: vegops/prune
-
   - uses: strip
-
-subpackages:
-  - name: prometheus-minimal
-    description: Minimal Prometheus monitoring server built from source
-    pipeline:
-      - uses: go/build
-        with:
-          packages: ./cmd/prometheus
-          output: prometheus
-          strip: "-s -w"
-          ldflags: >-
-            -X github.com/prometheus/common/version.Version=${{package.version}}
-            -X github.com/prometheus/common/version.Branch=HEAD
-            -X github.com/prometheus/common/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-            -X github.com/prometheus/common/version.BuildUser=vegops
-
-      - uses: go/build
-        with:
-          packages: ./cmd/promtool
-          output: promtool
-          strip: "-s -w"
-          ldflags: >-
-            -X github.com/prometheus/common/version.Version=${{package.version}}
-
-      - uses: vegops/rootfs
-
-      - uses: dotnet/entrypoint
-
-      - uses: strip
-    test:
-      environment:
-        contents:
-          repositories:
-            - *wolfi-repository
-          keyring:
-            - *wolfi-keyring
-          packages:
-            - apk-tools
-            - busybox
-            - posix-libc-utils
-            - prometheus-minimal=${{package.full-version}}
-      pipeline:
-        - name: Basic command test
-          runs: |
-            prometheus --version >/dev/null 2>&1
-            promtool --version >/dev/null 2>&1
 
 update:
   enabled: true
