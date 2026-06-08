@@ -1,6 +1,6 @@
 package:
   name: libtorrent
-  version: 2.0.12 # renovate: datasource=github-releases depName=arvidn/libtorrent
+  version: 2.0.13 # renovate: datasource=github-releases depName=arvidn/libtorrent
   epoch: 1
   description: libtorrent-rasterbar BitTorrent library
   copyright:
