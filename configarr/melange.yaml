@@ -1,0 +1,72 @@
+package:
+  name: configarr
+  version: 1.28.0 # renovate: datasource=github-releases depName=raydak-labs/configarr
+  epoch: 0
+  description: Sync TRaSH-Guides Custom Formats to Sonarr/Radarr
+  copyright:
+    - license: AGPL-3.0
+
+environment:
+  contents:
+    repositories:
+      - &wolfi-repository https://packages.wolfi.dev/os
+    keyring:
+      - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - nodejs-22
+      - pnpm
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/raydak-labs/configarr.git
+      tag: v${{package.version}}
+
+  - runs: |
+      sed -e 's#${getEnvs().ROOT_PATH}/config#${getEnvs().ROOT_PATH}/etc#g' \
+          -e 's#${getEnvs().ROOT_PATH}/repos#${getEnvs().ROOT_PATH}/var#g' \
+          ./src/env.ts > _
+      mv _ src/env.ts
+
+  - runs: pnpm install --frozen-lockfile || pnpm approve-builds --all
+
+  - runs: pnpm run build
+
+  - runs: |
+      install -Dm755 bundle.cjs "${{targets.destdir}}/opt/configarr/bundle.cjs"
+
+  - uses: vegops/rootfs
+
+  - uses: dotnet/entrypoint
+
+  - uses: strip
+
+update:
+  enabled: true
+  github:
+    identifier: raydak-labs/configarr
+    use-tag: true
+    strip-prefix: v
+
+test:
+  environment:
+    contents:
+      repositories:
+        - *wolfi-repository
+      keyring:
+        - *wolfi-keyring
+      packages:
+        - busybox
+        - nodejs-22-minimal
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - name: Smoke test — entrypoint installed and idle ping fails
+      runs: |
+        test -x /usr/bin/entrypoint
+        test -f /opt/configarr/bundle.cjs
+        test -f /usr/share/configarr/config.yml
+        test ! -f /configarr/etc/config.yml
+        ! /usr/bin/entrypoint --ping
