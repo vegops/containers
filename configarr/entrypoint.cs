@@ -46,6 +46,7 @@ try
     var schedule = Environment.GetEnvironmentVariable(ScheduleEnv);
     if (string.IsNullOrWhiteSpace(schedule))
         Environment.Exit(Run(ref child));
+    schedule = NormalizeSchedule(schedule);
 
     ScheduleLog($"enabled: {schedule}");
     var cron = new CronSchedule(schedule);
@@ -142,6 +143,14 @@ static bool Ping()
 
 static bool IsPidRunning(int pid) => kill(pid, 0) == 0 || Marshal.GetLastPInvokeError() == 1;
 
+static string NormalizeSchedule(string schedule)
+{
+    schedule = schedule.Trim();
+    if (schedule.Length >= 2 && ((schedule[0] == '"' && schedule[^1] == '"') || (schedule[0] == '\'' && schedule[^1] == '\'')))
+        schedule = schedule[1..^1].Trim();
+    return schedule;
+}
+
 static void ScheduleLog(string message) => Console.Error.WriteLine($"INFO {message}");
 
 [DllImport("libc", SetLastError = true)]
@@ -192,7 +201,7 @@ sealed class CronSchedule
         {
             var slash = part.IndexOf('/');
             var range = slash < 0 ? part : part[..slash];
-            var step = slash < 0 ? 1 : int.Parse(part[(slash + 1)..], CultureInfo.InvariantCulture);
+            var step = slash < 0 ? 1 : ParseInt(part[(slash + 1)..], $"invalid cron step: {part}");
             if (step < 1)
                 throw new Exception($"invalid cron step: {part}");
 
@@ -211,17 +220,24 @@ sealed class CronSchedule
         var dash = range.IndexOf('-');
         if (dash < 0)
         {
-            var value = int.Parse(range, CultureInfo.InvariantCulture);
+            var value = ParseInt(range, $"invalid cron value: {range}");
             if (value < min || value > max)
                 throw new Exception($"cron value out of range: {range}");
             return (value, value);
         }
 
-        var start = int.Parse(range[..dash], CultureInfo.InvariantCulture);
-        var end = int.Parse(range[(dash + 1)..], CultureInfo.InvariantCulture);
+        var start = ParseInt(range[..dash], $"invalid cron range: {range}");
+        var end = ParseInt(range[(dash + 1)..], $"invalid cron range: {range}");
         if (start < min || end > max || start > end)
             throw new Exception($"cron range out of range: {range}");
 
         return (start, end);
+    }
+
+    private static int ParseInt(string value, string message)
+    {
+        if (!int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed))
+            throw new Exception(message);
+        return parsed;
     }
 }
