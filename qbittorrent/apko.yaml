@@ -28,6 +28,10 @@ entrypoint:
 
 work-dir: /
 
+volumes:
+  - /qbittorrent/etc
+  - /qbittorrent/var
+
 environment:
   LANG: C.UTF-8
   HOME: /qbittorrent
