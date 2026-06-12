@@ -1,6 +1,6 @@
 package:
   name: sonarr
-  version: 4.0.16.2944 # renovate: datasource=github-releases depName=Sonarr/Sonarr
+  version: 4.0.17.2952 # renovate: datasource=github-releases depName=Sonarr/Sonarr
   epoch: 2
   description: TV show collection manager for Usenet and BitTorrent users
   copyright:
