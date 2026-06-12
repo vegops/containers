@@ -60,6 +60,18 @@
     },
     {
       "matchPackageNames": [
+        "Lidarr/Lidarr",
+        "Prowlarr/Prowlarr",
+        "Radarr/Radarr",
+        "Readarr/Readarr",
+        "Sonarr/Sonarr",
+        "Whisparr/Whisparr"
+      ],
+      "extractVersion": "^v?(?<version>.*)$",
+      "versioning": "regex:^v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$"
+    },
+    {
+      "matchPackageNames": [
         "qbittorrent/qBittorrent"
       ],
       "extractVersion": "^release-(?<version>.*)$"
@@ -105,7 +117,7 @@
         "/(^|/)melange\\.yaml$/"
       ],
       "matchStrings": [
-        "version:\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?[\\s\\S]*?github:\\s*identifier:\\s*[\"']?(?<depName>[^\\s\\n#\"']+)[\"']?"
+        "(?:^|\\n)\\s+version:\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*(?:\\n|$)[\\s\\S]*?github:\\s*identifier:\\s*[\"']?(?<depName>[^\\s\\n#\"']+)[\"']?"
       ],
       "datasourceTemplate": "github-tags",
       "extractVersionTemplate": "^v?(?<version>.*)$"
