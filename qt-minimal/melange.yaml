@@ -1,6 +1,6 @@
 package:
   name: qt-minimal
-  version: 6.11.1
+  version: 6.11.1 # renovate: datasource=github-tags depName=qt/qtbase
   epoch: 1
   description: Minimal Qt 6
   copyright:
