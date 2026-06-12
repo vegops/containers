@@ -1,6 +1,6 @@
 package:
   name: prowlarr
-  version: 2.3.0.5236 # renovate: datasource=github-releases depName=Prowlarr/Prowlarr
+  version: 2.4.0.5397 # renovate: datasource=github-releases depName=Prowlarr/Prowlarr
   epoch: 2
   description: Indexer manager/proxy built for Usenet and BitTorrent
   copyright:
