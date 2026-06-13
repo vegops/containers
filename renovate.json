@@ -102,25 +102,24 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Comment-based updates for melange.yaml (centralized logic)",
+      "description": "Update Melange package.version and reset epoch",
       "managerFilePatterns": [
         "/(^|/)melange\\.yaml$/"
       ],
       "matchStrings": [
-        "(?<part>version|tag):\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)"
-      ]
+        "(?<prefix>^|\\n)(?<indentation>[ \\t]+)version:\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?(?: versioning=(?<versioning>\\S+))?\\n[ \\t]+epoch:\\s*\\d+"
+      ],
+      "autoReplaceStringTemplate": "{{{prefix}}}{{{indentation}}}version: {{{newValue}}} # renovate: datasource={{{datasource}}} depName={{{depName}}}{{#if registryUrl}} registryUrl={{{registryUrl}}}{{/if}}{{#if extractVersion}} extractVersion={{{extractVersion}}}{{/if}}{{#if versioning}} versioning={{{versioning}}}{{/if}}\n{{{indentation}}}epoch: 0"
     },
     {
       "customType": "regex",
-      "description": "Automatic updates for simple melange.yaml files",
+      "description": "Update Melange variable versions",
       "managerFilePatterns": [
         "/(^|/)melange\\.yaml$/"
       ],
       "matchStrings": [
-        "(?:^|\\n)\\s+version:\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*(?:\\n|$)[\\s\\S]*?github:\\s*identifier:\\s*[\"']?(?<depName>[^\\s\\n#\"']+)[\"']?"
-      ],
-      "datasourceTemplate": "github-tags",
-      "extractVersionTemplate": "^v?(?<version>.*)$"
+        "(?<prefix>^|\\n)(?<indentation>[ \\t]+)(?<varName>[A-Za-z0-9_.-]+-version):\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?(?: versioning=(?<versioning>\\S+))?"
+      ]
     },
     {
       "customType": "regex",
