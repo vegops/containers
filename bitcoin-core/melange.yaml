@@ -1,7 +1,7 @@
 package:
   name: bitcoin-core
   version: 31.0 # renovate: datasource=github-tags depName=bitcoin/bitcoin
-  epoch: 3
+  epoch: 4
   description: Bitcoin Core daemon
   copyright:
     - license: MIT
@@ -17,14 +17,14 @@ environment:
     packages:
       - busybox
       - build-base
-      - cmake
+      # Temporary pin until Wolfi cmake/jsoncpp ABI skew is resolved.
+      - cmake=4.2.2-r1
       - linux-headers
       - pkgconf
       - libevent-dev
-      # Temporary pin until bitcoin builds are compatible with Boost 1.91 in Wolfi.
-      - boost-dev=1.90.0
-      - boost-static=1.90.0
-      - boost-tools=1.90.0
+      - boost-dev
+      - boost-static
+      - boost-tools
       - zeromq-dev
       - libzmq-static
       - gpg
@@ -37,6 +37,8 @@ pipeline:
     with:
       repository: https://github.com/bitcoin/bitcoin
       tag: v${{package.version}}
+      cherry-picks: |
+        master/0bc9d354dfd8074d1c36a891a69b6585a8775c65: multi_index: fix compilation failure with boost >= 1.91
 
   - runs: |
       export GNUPGHOME="$(mktemp -d)"
