@@ -1,7 +1,7 @@
 package:
   name: tautulli
-  version: 2.17.1 # renovate: datasource=github-tags depName=Tautulli/Tautulli
-  epoch: 2
+  version: 2.17.2 # renovate: datasource=github-tags depName=Tautulli/Tautulli
+  epoch: 0
   description: Monitoring, analytics, and notifications for Plex Media Server
   copyright:
     - license: GPL-3.0-or-later
