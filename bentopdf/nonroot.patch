@@ -1,0 +1,66 @@
+--- a/nginx.conf
++++ b/nginx.conf
+@@ -1,4 +1,5 @@
+-pid /etc/nginx/tmp/nginx.pid;
++pid /bentopdf/run/nginx.pid;
++error_log /dev/stderr warn;
+
+ events {
+     worker_connections 1024;
+@@ -11,6 +12,12 @@
+     }
+     default_type application/octet-stream;
+
++    client_body_temp_path /bentopdf/cache/client_body;
++    fastcgi_temp_path /bentopdf/cache/fastcgi;
++    proxy_temp_path /bentopdf/cache/proxy;
++    scgi_temp_path /bentopdf/cache/scgi;
++    uwsgi_temp_path /bentopdf/cache/uwsgi;
++
+     gzip_static on;
+
+     gzip on;
+@@ -23,13 +30,13 @@
+         listen 8080;
+         listen [::]:8080;
+         server_name localhost;
+-        root /usr/share/nginx/html;
++        root /usr/share/bentopdf/html;
+         index index.html;
+         absolute_redirect off;
++        access_log /dev/stdout;
+
+-        include /etc/nginx/security-headers.conf;
++        include /usr/share/bentopdf/security-headers.conf;
+
+-
+         location ^~ /pdfjs-viewer/ {
+             try_files $uri =404;
+             expires 1y;
+@@ -93,7 +100,7 @@
+             types {} default_type application/wasm;
+             add_header Content-Encoding gzip;
+             add_header Vary "Accept-Encoding";
+-            include /etc/nginx/security-headers.conf;
++            include /usr/share/bentopdf/security-headers.conf;
+             expires 1y;
+         }
+
+@@ -102,7 +109,7 @@
+             types {} default_type application/octet-stream;
+             add_header Content-Encoding gzip;
+             add_header Vary "Accept-Encoding";
+-            include /etc/nginx/security-headers.conf;
++            include /usr/share/bentopdf/security-headers.conf;
+             expires 1y;
+         }
+
+@@ -129,7 +136,7 @@
+         error_page 404 /404.html;
+
+         location ^~ /docs/ {
+-            include /etc/nginx/security-headers-docs.conf;
++            include /usr/share/bentopdf/security-headers-docs.conf;
+             try_files $uri $uri/ $uri.html /docs/index.html =404;
+             expires 5m;
+         }

@@ -1,0 +1,91 @@
+package:
+  name: bentopdf
+  version: 2.8.5 # renovate: datasource=github-tags depName=alam00000/bentopdf
+  epoch: 0
+  description: Privacy-first client-side PDF toolkit
+  copyright:
+    - license: AGPL-3.0-only
+  options:
+    no-depends: true
+
+environment:
+  environment:
+    HUSKY: "0"
+    NODE_OPTIONS: --max-old-space-size=3072
+  contents:
+    repositories:
+      - &wolfi-repository https://packages.wolfi.dev/os
+    keyring:
+      - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - node-gyp
+      - nodejs-22
+      - npm
+      - py3.14-setuptools
+      - python-3.14
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/alam00000/bentopdf
+      tag: v${{package.version}}
+
+  - uses: patch
+    with:
+      patches: nonroot.patch
+
+  - environment:
+      HOME: /home/build/.home
+      CI: "true"
+      BASE_URL: ""
+      COMPRESSION_MODE: all
+      SIMPLE_MODE: "true"
+      SITE_URL: https://www.bentopdf.com
+    runs: |
+      mkdir -p /home/build/.home
+      npm config set fetch-retries 5
+      npm config set fetch-retry-mintimeout 60000
+      npm config set fetch-retry-maxtimeout 300000
+      npm config set fetch-timeout 600000
+      npm ci
+      npm run build:with-docs
+
+  - runs: |
+      mkdir -p "${{targets.destdir}}/usr/share/bentopdf/html"
+      cp -a dist/. "${{targets.destdir}}/usr/share/bentopdf/html/"
+      install -Dm644 security-headers.conf "${{targets.destdir}}/usr/share/bentopdf/security-headers.conf"
+      install -Dm644 security-headers-docs.conf "${{targets.destdir}}/usr/share/bentopdf/security-headers-docs.conf"
+      install -Dm644 nginx.conf "${{targets.destdir}}/usr/share/bentopdf/nginx.conf"
+
+update:
+  enabled: true
+  github:
+    identifier: alam00000/bentopdf
+    use-tag: true
+    strip-prefix: v
+
+test:
+  environment:
+    contents:
+      repositories:
+        - *wolfi-repository
+      keyring:
+        - *wolfi-keyring
+      packages:
+        - busybox
+        - nginx-mainline
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - name: BentoPDF package layout test
+      runs: |
+        test -f /usr/share/bentopdf/html/index.html
+        test -f /usr/share/bentopdf/security-headers.conf
+        test -f /usr/share/bentopdf/security-headers-docs.conf
+        test -f /usr/share/bentopdf/nginx.conf
+        echo 'nonroot:x:65532:65532:nonroot:/:/sbin/nologin' >> /etc/passwd
+        echo 'nonroot:x:65532:' >> /etc/group
+        mkdir -p /bentopdf/run /bentopdf/cache/client_body /bentopdf/cache/fastcgi /bentopdf/cache/proxy /bentopdf/cache/scgi /bentopdf/cache/uwsgi
+        nginx -t -c /usr/share/bentopdf/nginx.conf -g "user nonroot nonroot;"
