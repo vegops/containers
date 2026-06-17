@@ -107,9 +107,24 @@
         "/(^|/)melange\\.yaml$/"
       ],
       "matchStrings": [
-        "(?<indentation>[ \\t]+)version:\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?(?: versioning=(?<versioning>\\S+))?\\n[ \\t]+epoch:\\s*\\d+"
+        "(?<indentation>[ \\t]+)version:\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[ \\t]+epoch:\\s*\\d+"
       ],
-      "autoReplaceStringTemplate": "{{{indentation}}}version: {{{newValue}}} # renovate: datasource={{{datasource}}} depName={{{depName}}}{{#if registryUrl}} registryUrl={{{registryUrl}}}{{/if}}{{#if extractVersion}} extractVersion={{{extractVersion}}}{{/if}}{{#if versioning}} versioning={{{versioning}}}{{/if}}\n{{{indentation}}}epoch: 0"
+      "autoReplaceStringTemplate": "{{{indentation}}}version: {{{newValue}}} # renovate: datasource={{{datasource}}} depName={{{depName}}}\n{{{indentation}}}epoch: 0"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Tor package.version and reset epoch",
+      "managerFilePatterns": [
+        "/^tor\\/melange\\.yaml$/"
+      ],
+      "matchStrings": [
+        "(?<indentation>[ \\t]+)version:\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*# renovate: datasource=gitlab-tags depName=tpo/core/tor registryUrl=https://gitlab\\.torproject\\.org extractVersion=\\^tor-\\(\\?<version>\\.\\*\\)\\$\\n[ \\t]+epoch:\\s*\\d+"
+      ],
+      "datasourceTemplate": "gitlab-tags",
+      "depNameTemplate": "tpo/core/tor",
+      "registryUrlTemplate": "https://gitlab.torproject.org",
+      "extractVersionTemplate": "^tor-(?<version>.*)$",
+      "autoReplaceStringTemplate": "{{{indentation}}}version: {{{newValue}}} # renovate: datasource=gitlab-tags depName=tpo/core/tor registryUrl=https://gitlab.torproject.org extractVersion=^tor-(?<version>.*)$\n{{{indentation}}}epoch: 0"
     },
     {
       "customType": "regex",
