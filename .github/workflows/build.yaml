@@ -730,9 +730,17 @@ jobs:
           REPOSITORY: ${{ steps.publish_meta.outputs.repository }}
           RELEASE_TAG: ${{ steps.release_tag.outputs.release_tag }}
           PUBLISHED_TAGS: ${{ steps.publish_tags.outputs.published_tags }}
+          PUBLISH_DIGEST: ${{ steps.publish.outputs.digest }}
         run: |
           set -euo pipefail
-          source_ref="${{ env.REGISTRY_NAMESPACE }}/${REPOSITORY}:${RELEASE_TAG}"
+
+          digest="${PUBLISH_DIGEST##*@}"
+          if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Unexpected published digest: $PUBLISH_DIGEST"
+            exit 1
+          fi
+
+          source_ref="${{ env.REGISTRY_NAMESPACE }}/${REPOSITORY}@${digest}"
           for tag in $(jq -r '.[]' <<<"$PUBLISHED_TAGS"); do
             if [ "$tag" = "$RELEASE_TAG" ]; then
               continue
@@ -741,6 +749,28 @@ jobs:
               -t "${{ env.REGISTRY_NAMESPACE }}/${REPOSITORY}:${tag}" \
               "$source_ref"
           done
+
+          if [ "$RELEASE_TAG" != "latest" ]; then
+            digest_hex="${digest#sha256:}"
+            immutable_tag="${RELEASE_TAG}-${digest_hex:0:12}"
+            immutable_ref="${{ env.REGISTRY_NAMESPACE }}/${REPOSITORY}:${immutable_tag}"
+
+            if docker buildx imagetools inspect "$immutable_ref" >/dev/null 2>&1; then
+              existing_digest="$(
+                docker buildx imagetools inspect \
+                  --format '{{json .Manifest}}' "$immutable_ref" | jq -r '.digest'
+              )"
+              if [ "$existing_digest" != "$digest" ]; then
+                echo "::error::Immutable tag $immutable_tag already points to $existing_digest, expected $digest"
+                exit 1
+              fi
+              echo "Immutable tag already points to $digest: $immutable_tag"
+            else
+              docker buildx imagetools create \
+                -t "$immutable_ref" \
+                "$source_ref"
+            fi
+          fi
 
       - name: Sign image with cosign
         if: github.event_name != 'pull_request'
