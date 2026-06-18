@@ -9,11 +9,13 @@
 #:property AssemblyName=entrypoint
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 const string AppBin = "/usr/lib/plexmediaserver/Plex Media Server";
 const string LogDir = "/plex/etc/Library/Application Support/Plex Media Server/Logs";
 const string MainLog = "/plex/etc/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log";
+const string PidFile = "/plex/etc/Library/Application Support/Plex Media Server/plexmediaserver.pid";
 const string StdoutLogLevelEnv = "PLEX_STDOUT_LOG_LEVEL";
 const int SigTerm = 15;
 
@@ -35,6 +37,7 @@ using var sigInt = PosixSignalRegistration.Create(PosixSignal.SIGINT, context =>
 try
 {
     Directory.CreateDirectory(LogDir);
+    RemoveStalePidFile();
 
     var stdoutLogLevel = ReadStdoutLogLevel();
     var logTask = stdoutLogLevel == LogLevel.Off
@@ -83,6 +86,38 @@ static Process StartPlex()
         startInfo.ArgumentList.Add(arg);
 
     return Process.Start(startInfo) ?? throw new InvalidOperationException($"failed to start {AppBin}");
+}
+
+static void RemoveStalePidFile()
+{
+    if (!File.Exists(PidFile))
+        return;
+
+    var rawPid = File.ReadAllText(PidFile).Trim();
+    if (int.TryParse(rawPid, NumberStyles.None, CultureInfo.InvariantCulture, out var pid) &&
+        IsPlexProcess(pid))
+    {
+        throw new InvalidOperationException($"Plex Media Server is already running with PID {pid}");
+    }
+
+    File.Delete(PidFile);
+    Console.Error.WriteLine($"removed stale Plex PID file: {PidFile}");
+}
+
+static bool IsPlexProcess(int pid)
+{
+    if (pid <= 0)
+        return false;
+
+    try
+    {
+        var commandLine = File.ReadAllText($"/proc/{pid}/cmdline");
+        return commandLine.Contains("Plex Media Server", StringComparison.Ordinal);
+    }
+    catch
+    {
+        return false;
+    }
 }
 
 static LogLevel ReadStdoutLogLevel()

@@ -1,7 +1,7 @@
 package:
   name: qbittorrent
   version: 5.2.2 # renovate: datasource=github-tags depName=qbittorrent/qBittorrent
-  epoch: 0
+  epoch: 1
   description: qBittorrent BitTorrent client
   copyright:
     - license: GPL-2.0-only
@@ -136,6 +136,8 @@ test:
     - name: Basic qBittorrent command test
       runs: |
         test -x /usr/bin/entrypoint
+        touch /qbittorrent/etc/lockfile
         entrypoint --version >/dev/null 2>&1
+        test ! -e /qbittorrent/etc/lockfile
         qbittorrent --version >/dev/null 2>&1 || \
         qbittorrent --help >/dev/null 2>&1

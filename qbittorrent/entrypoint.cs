@@ -8,6 +8,7 @@
 #:property IlcTrimMetadata=true
 #:property AssemblyName=entrypoint
 
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,11 +16,13 @@ using System.Text;
 const string AppBin = "/usr/bin/qbittorrent";
 const string ConfigPath = "/qbittorrent/etc/qBittorrent.conf";
 const string DefaultConfigPath = "/usr/share/qbittorrent/qBittorrent.conf";
+const string LockFile = "/qbittorrent/etc/lockfile";
 const string DefaultPasswordHash = "@ByteArray(188J/h/wfAYQ9H+mTl/7lA==:j/+e2SwJUi9g+IPiEG2+Pix9W0IOv2c20QjrmBUhr4TBUXO3fcMv6leeU6qK8834xiq8fngh8ShwYDfYO0w6lg==)";
 const string Alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 try
 {
+    RemoveStaleLockFile();
     EnsureConfig();
     RotateDefaultPassword();
     Exec();
@@ -77,6 +80,38 @@ static string RandomString(int length)
         chars[i] = Alphabet[bytes[i] % Alphabet.Length];
 
     return new string(chars);
+}
+
+static void RemoveStaleLockFile()
+{
+    if (!File.Exists(LockFile))
+        return;
+
+    var firstLine = File.ReadLines(LockFile).FirstOrDefault()?.Trim();
+    if (int.TryParse(firstLine, NumberStyles.None, CultureInfo.InvariantCulture, out var pid) &&
+        IsQbittorrentProcess(pid))
+    {
+        throw new InvalidOperationException($"qBittorrent is already running with PID {pid}");
+    }
+
+    File.Delete(LockFile);
+    Console.Error.WriteLine($"removed stale qBittorrent lock file: {LockFile}");
+}
+
+static bool IsQbittorrentProcess(int pid)
+{
+    if (pid <= 0)
+        return false;
+
+    try
+    {
+        var commandLine = File.ReadAllText($"/proc/{pid}/cmdline");
+        return commandLine.Contains("qbittorrent", StringComparison.OrdinalIgnoreCase);
+    }
+    catch
+    {
+        return false;
+    }
 }
 
 static void Exec()
