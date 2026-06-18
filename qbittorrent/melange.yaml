@@ -136,6 +136,7 @@ test:
     - name: Basic qBittorrent command test
       runs: |
         test -x /usr/bin/entrypoint
+        mkdir -p /qbittorrent/etc
         touch /qbittorrent/etc/lockfile
         entrypoint --version >/dev/null 2>&1
         test ! -e /qbittorrent/etc/lockfile
