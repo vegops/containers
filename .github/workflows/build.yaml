@@ -50,7 +50,7 @@ jobs:
       deps_tier_5: ${{ steps.set.outputs.deps_tier_5 }}
       apko_images: ${{ steps.set.outputs.apko_images }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - id: set
         shell: bash
@@ -190,7 +190,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install melange
         uses: chainguard-dev/actions/setup-melange@9978bf17926f53444b5eff45479954d94ec12e32 # v1.6.24
@@ -229,7 +229,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -263,7 +263,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -296,7 +296,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -336,7 +336,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -377,7 +377,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -419,7 +419,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Build package
         uses: ./.github/actions/melange-build
@@ -464,7 +464,7 @@ jobs:
         name: ${{ fromJson(needs.discover.outputs.apko_images) }}
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install melange
         uses: chainguard-dev/actions/setup-melange@9978bf17926f53444b5eff45479954d94ec12e32 # v1.6.24
