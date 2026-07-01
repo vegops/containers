@@ -84,10 +84,11 @@
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$"
     },
     {
-      "matchPackageNames": [
-        "rocksdb-10"
+      "description": "Keep rocksdb-10 on 10.x",
+      "matchFileNames": [
+        "rocksdb-10/**"
       ],
-      "allowedVersions": "<11.0.0"
+      "allowedVersions": "/^10\\./"
     }
   ],
   "customDatasources": {
