@@ -1,6 +1,6 @@
 package:
   name: bentopdf
-  version: 2.8.5 # renovate: datasource=github-tags depName=alam00000/bentopdf
+  version: 2.8.6 # renovate: datasource=github-tags depName=alam00000/bentopdf
   epoch: 0
   description: Privacy-first client-side PDF toolkit
   copyright:
