@@ -1,7 +1,7 @@
 package:
   name: prometheus-minimal
-  version: 3.12.0 # renovate: datasource=github-tags depName=prometheus/prometheus
-  epoch: 1
+  version: 3.13.0 # renovate: datasource=github-tags depName=prometheus/prometheus
+  epoch: 0
   description: Minimal Prometheus monitoring server built from source
   copyright:
     - license: Apache-2.0
