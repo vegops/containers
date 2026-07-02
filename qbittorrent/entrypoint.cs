@@ -17,6 +17,7 @@ const string AppBin = "/usr/bin/qbittorrent";
 const string ConfigPath = "/qbittorrent/etc/qBittorrent.conf";
 const string DefaultConfigPath = "/usr/share/qbittorrent/qBittorrent.conf";
 const string LockFile = "/qbittorrent/etc/lockfile";
+const string IpcSocket = "/qbittorrent/etc/ipc-socket";
 const string DefaultPasswordHash = "@ByteArray(188J/h/wfAYQ9H+mTl/7lA==:j/+e2SwJUi9g+IPiEG2+Pix9W0IOv2c20QjrmBUhr4TBUXO3fcMv6leeU6qK8834xiq8fngh8ShwYDfYO0w6lg==)";
 const string Alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -95,6 +96,9 @@ static void RemoveStaleLockFile()
     }
 
     File.Delete(LockFile);
+    if (File.Exists(IpcSocket))
+        File.Delete(IpcSocket);
+
     Console.Error.WriteLine($"removed stale qBittorrent lock file: {LockFile}");
 }
 
