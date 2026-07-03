@@ -43,7 +43,7 @@ pipeline:
         --prod \
         --no-frozen-lockfile
 
-  - working-directory: package/node_modules/sqlite3
+  - working-directory: package/node_modules/better-sqlite3
     runs: |
       npm run install
 
