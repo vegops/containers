@@ -52,6 +52,7 @@
       "matchPackageNames": [
         "AdguardTeam/AdGuardHome",
         "arvidn/libtorrent",
+        "bitcoin/bitcoin",
         "seerr-team/seerr",
         "VueTorrent/VueTorrent",
         "vaultwarden/web-vault"
