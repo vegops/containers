@@ -50,6 +50,7 @@ pipeline:
       npm config set fetch-retry-mintimeout 60000
       npm config set fetch-retry-maxtimeout 300000
       npm config set fetch-timeout 600000
+      npm config set allow-remote root
       npm ci
       npm run build:with-docs
 
