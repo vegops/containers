@@ -475,7 +475,7 @@ jobs:
 
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@c99871dec2022cc055c062a10cc1a1310835ceb4 # v4.3.0
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           registry: ${{ env.REGISTRY_HOST }}
           username: ${{ github.actor }}
@@ -526,7 +526,7 @@ jobs:
         run: rm -f sbom-*.spdx.json
 
       - name: Build image tarball (x86_64)
-        uses: chainguard-images/actions/apko-build@ff45c3434429aff735fdda0b5afbb57b14002be5 # v1.0.34
+        uses: chainguard-images/actions/apko-build@ce715ff156f55cfbd242bb358b5151a9bc50332a # v1.0.35
         with:
           apko-image: ${{ env.APKO_IMAGE }}
           config: ${{ matrix.name }}/apko.yaml
@@ -554,7 +554,7 @@ jobs:
         run: rm -f sbom-*.spdx.json
 
       - name: Build image tarball (aarch64)
-        uses: chainguard-images/actions/apko-build@ff45c3434429aff735fdda0b5afbb57b14002be5 # v1.0.34
+        uses: chainguard-images/actions/apko-build@ce715ff156f55cfbd242bb358b5151a9bc50332a # v1.0.35
         with:
           apko-image: ${{ env.APKO_IMAGE }}
           config: ${{ matrix.name }}/apko.yaml
@@ -714,7 +714,7 @@ jobs:
       - name: Publish multi-arch image
         if: github.event_name != 'pull_request'
         id: publish
-        uses: chainguard-images/actions/apko-publish@ff45c3434429aff735fdda0b5afbb57b14002be5 # v1.0.34
+        uses: chainguard-images/actions/apko-publish@ce715ff156f55cfbd242bb358b5151a9bc50332a # v1.0.35
         with:
           apko-image: ${{ env.APKO_IMAGE }}
           config: ${{ matrix.name }}/apko.yaml
