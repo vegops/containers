@@ -1,6 +1,6 @@
 package:
   name: radarr
-  version: 6.2.1.10461 # renovate: datasource=github-releases depName=Radarr/Radarr
+  version: 6.3.0.10514 # renovate: datasource=github-releases depName=Radarr/Radarr
   epoch: 0
   description: Movie collection manager for Usenet and BitTorrent users
   copyright:
