@@ -92,6 +92,18 @@
       "allowedVersions": "/^10\\./"
     }
   ],
+  "bumpVersions": [
+    {
+      "name": "Bump Melange epoch for non-package version updates",
+      "filePatterns": [
+        "{{packageFile}}"
+      ],
+      "matchStrings": [
+        "{{#if (equals depType \"melange-var-version\")}}(?<indentation>[ \\t]+)epoch:\\s*(?<version>\\d+){{else}}RENOVATE_NO_MATCH_(?<version>\\d+){{/if}}"
+      ],
+      "bumpType": "major"
+    }
+  ],
   "customDatasources": {
     "plex": {
       "defaultRegistryUrlTemplate": "https://plex.tv/api/downloads/5.json",
@@ -136,7 +148,8 @@
       ],
       "matchStrings": [
         "(?<prefix>^|\\n)(?<indentation>[ \\t]+)(?<varName>[A-Za-z0-9_.-]+-version):\\s*[\"']?(?<currentValue>[^\\s#\\n\"']+)[\"']?\\s*# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?(?: versioning=(?<versioning>\\S+))?"
-      ]
+      ],
+      "depTypeTemplate": "melange-var-version"
     },
     {
       "customType": "regex",
