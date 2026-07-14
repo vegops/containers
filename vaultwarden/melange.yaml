@@ -1,13 +1,13 @@
 package:
   name: vaultwarden
   version: 1.36.0 # renovate: datasource=github-releases depName=dani-garcia/vaultwarden
-  epoch: 3
+  epoch: 4
   description: Unofficial Bitwarden-compatible server written in Rust
   copyright:
     - license: AGPL-3.0-only
 
 vars:
-  web-vault-version: 2026.4.1 # renovate: datasource=docker depName=vaultwarden/web-vault
+  web-vault-version: 2026.6.2 # renovate: datasource=docker depName=vaultwarden/web-vault
 
 environment:
   contents:
