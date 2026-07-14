@@ -17,8 +17,7 @@ environment:
     packages:
       - busybox
       - build-base
-      # Temporary pin until Wolfi cmake/jsoncpp ABI skew is resolved.
-      - cmake=4.2.2-r1
+      - cmake
       - linux-headers
       - pkgconf
       - libevent-dev
@@ -37,8 +36,6 @@ pipeline:
     with:
       repository: https://github.com/bitcoin/bitcoin
       tag: v${{package.version}}
-      cherry-picks: |
-        master/0bc9d354dfd8074d1c36a891a69b6585a8775c65: multi_index: fix compilation failure with boost >= 1.91
 
   - runs: |
       export GNUPGHOME="$(mktemp -d)"
