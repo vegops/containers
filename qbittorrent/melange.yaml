@@ -50,6 +50,8 @@ pipeline:
     with:
       repository: https://github.com/qbittorrent/qBittorrent
       tag: release-${{package.version}}
+      cherry-picks: |
+        master/e154c1a811021ab0bd6e6f9595c2b3c6518aaea3: Support build against latest version of libtorrent
 
   - name: Patch qBittorrent sources
     runs: |
