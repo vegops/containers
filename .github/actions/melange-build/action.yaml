@@ -80,7 +80,7 @@ runs:
         repository-append: ${{ github.workspace }}/packages
         keyring-append: ${{ github.workspace }}/melange.rsa.pub
         pipeline-dir: ${{ github.workspace }}/.pipelines
-        source-dir: ${{ github.workspace }}
+        source-dir: ${{ github.workspace }}/${{ inputs.package-name }}
         workdir: ${{ inputs.package-name }}
 
     - name: Run smoke tests
