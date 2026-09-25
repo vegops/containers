@@ -1,7 +1,7 @@
 package:
   name: openssl-static
   version: 3.6.2 # renovate: datasource=github-tags depName=openssl/openssl
-  epoch: 0
+  epoch: 1
   description: OpenSSL static libraries
   copyright:
     - license: Apache-2.0
@@ -13,7 +13,6 @@ environment:
     keyring:
       - &wolfi-keyring https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     packages:
-      - binutils
       - busybox
       - openssl-dev
 
@@ -36,21 +35,6 @@ pipeline:
       mkdir -p "${{targets.destdir}}/usr/lib/cmake/OpenSSL"
       cp -af /usr/lib/cmake/OpenSSL/* "${{targets.destdir}}/usr/lib/cmake/OpenSSL/"
 
-  - runs: |
-      # Keep this package self-contained for consumers that link directly
-      # against /usr/lib/libcrypto.a without adding -ljitterentropy.
-      tmpdir="$(mktemp -d)"
-      cd "$tmpdir"
-      ar x /usr/lib/libjitterentropy.a
-      ar rcs "${{targets.destdir}}/usr/lib/libcrypto.a" *.o
-      cd /
-      rm -rf "$tmpdir"
-
-      # libjitterentropy.a is merged above and is intentionally not shipped.
-      sed -i 's/ -l:libjitterentropy\.a//g' \
-        "${{targets.destdir}}/usr/lib/pkgconfig/libcrypto.pc" \
-        "${{targets.destdir}}/usr/lib/cmake/OpenSSL/OpenSSLConfig.cmake"
-
   - uses: strip
 
 update:
@@ -70,6 +54,7 @@ test:
         - *wolfi-keyring
       packages:
         - binutils
+        - build-base
         - busybox
         - pkgconf
         - ${{package.name}}=${{package.full-version}}
@@ -88,4 +73,16 @@ test:
         pkgconf --exists libcrypto libssl openssl
         ! pkgconf --static --libs libcrypto | grep -q jitterentropy
         ! grep -q jitterentropy /usr/lib/cmake/OpenSSL/OpenSSLConfig.cmake
-        nm -A /usr/lib/libcrypto.a | grep ' T jent_entropy_init_ex' >/dev/null
+        cat > /tmp/openssl-link.c <<'EOF'
+        #include <openssl/ssl.h>
+        int main(void) {
+          SSL_CTX *ctx = SSL_CTX_new(TLS_method());
+          if (!ctx) return 1;
+          SSL_CTX_free(ctx);
+          return 0;
+        }
+        EOF
+        cc /tmp/openssl-link.c -o /tmp/openssl-link /usr/lib/libssl.a /usr/lib/libcrypto.a -ldl -pthread
+        readelf -d /tmp/openssl-link > /tmp/openssl-link.dynamic
+        ! grep -E 'NEEDED.*lib(ssl|crypto)\.so' /tmp/openssl-link.dynamic
+        /tmp/openssl-link
