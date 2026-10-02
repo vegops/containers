@@ -1,6 +1,6 @@
 package:
   name: fulcrum
-  version: 2.1.2 # renovate: datasource=github-tags depName=cculianu/Fulcrum
+  version: 2.1.3 # renovate: datasource=github-tags depName=cculianu/Fulcrum
   epoch: 0
   description: Fulcrum SPV server
   copyright:
