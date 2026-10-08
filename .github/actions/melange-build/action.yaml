@@ -31,13 +31,13 @@ runs:
   using: composite
   steps:
     - name: Install melange
-      uses: chainguard-dev/actions/setup-melange@805da2efdffdc42b8afd8880e575a48b471ef544 # v1.6.37
+      uses: chainguard-dev/actions/setup-melange@84b1be4c638f12d4256ddddef17af98853b6d0d9 # v1.6.40
       with:
         version: ${{ inputs.melange-version }}
 
     - name: Download ephemeral signing key (PR)
       if: ${{ inputs.event-name == 'pull_request' }}
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         name: melange-ephemeral-key
         path: .
@@ -53,7 +53,7 @@ runs:
 
     - name: Download base packages (same arch)
       if: ${{ inputs.has-dependencies == 'true' }}
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         pattern: packages-*-${{ inputs.arch }}
         merge-multiple: true
@@ -70,7 +70,7 @@ runs:
         fi
 
     - name: Build package with melange
-      uses: chainguard-dev/actions/melange-build-pkg@805da2efdffdc42b8afd8880e575a48b471ef544 # v1.6.37
+      uses: chainguard-dev/actions/melange-build-pkg@84b1be4c638f12d4256ddddef17af98853b6d0d9 # v1.6.40
       with:
         config: melange.yaml
         archs: ${{ inputs.arch }}
@@ -94,7 +94,7 @@ runs:
           --pipeline-dirs "${{ github.workspace }}/.pipelines"
 
     - name: Upload packages
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: packages-${{ inputs.package-name }}-${{ inputs.arch }}
         path: |
